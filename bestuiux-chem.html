@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Mechanism Visualizer Pro | Ultimate Professional Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-solid: #667eea;
+            --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --accent: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-bg: #0a0e27;
+            --darker-bg: #060814;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-hover: rgba(255, 255, 255, 0.08);
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --text-muted: #718096;
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.35);
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.35);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--darker-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(102, 126, 234, 0.18) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(118, 75, 162, 0.18) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(245, 87, 108, 0.10) 0%, transparent 50%);
+            animation: bgPulse 16s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes bgPulse {
+
+            0%,
+            100% {
+                opacity: .6
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 1001;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-lg);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.75rem;
+            background: var(--primary);
+            box-shadow: var(--shadow-glow);
+            transition: transform .45s cubic-bezier(.68, -0.55, .265, 1.55), box-shadow .35s ease;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.08) rotate(90deg);
+            box-shadow: 0 0 40px rgba(102, 126, 234, .55);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            width: 380px;
+            height: 100vh;
+            padding: 5rem 1.5rem 2rem;
+            transform: translateX(-100%);
+            transition: transform .5s cubic-bezier(.68, -0.55, .265, 1.55);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .sidebar-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .sidebar-header h2 {
+            margin: 0 0 .5rem 0;
+            font-size: 1.55rem;
+            font-weight: 800;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sidebar-header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin: 0 0 1rem 0;
+            padding: .9rem 1rem;
+            border-left: 4px solid;
+            border-radius: var(--radius-md);
+            animation: slideInLeft .4s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-20px);
+                opacity: 0
+            }
+
+            to {
+                transform: none;
+                opacity: 1
+            }
+        }
+
+        .alert i {
+            font-size: 1.1rem;
+        }
+
+        .alert-info {
+            background: rgba(102, 126, 234, .15);
+            border-color: #667eea;
+            color: #a0c4ff;
+        }
+
+        .alert-success {
+            background: rgba(79, 172, 254, .15);
+            border-color: #4facfe;
+            color: #8cc9ff;
+        }
+
+        .alert-warning {
+            background: rgba(255, 184, 0, .15);
+            border-color: #ffb800;
+            color: #ffd666;
+        }
+
+        .alert-danger {
+            background: rgba(245, 87, 108, .15);
+            border-color: #f5576c;
+            color: #ff8a95;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 700;
+            font-size: .96rem;
+            margin-bottom: .6rem;
+        }
+
+        .input-label i {
+            color: var(--primary-solid);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            min-height: 140px;
+            resize: vertical;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: .95rem;
+            line-height: 1.55;
+            font-family: 'Courier New', monospace;
+            transition: all .25s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-solid);
+            background: var(--card-hover);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, .12);
+        }
+
+        .json-actions {
+            position: absolute;
+            top: .75rem;
+            right: .75rem;
+            display: flex;
+            gap: .5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .6rem;
+            padding: .9rem 1.2rem;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            letter-spacing: .2px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .25s, box-shadow .25s;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .25);
+            transform: translate(-50%, -50%);
+            transition: width .6s, height .6s;
+        }
+
+        .btn:hover::before {
+            width: 280px;
+            height: 280px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #001018;
+        }
+
+        .btn-icon {
+            width: 42px;
+            height: 42px;
+            padding: 0;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .examples-section {
+            margin-top: 1.5rem;
+        }
+
+        .examples-section h3 {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: 1rem;
+            margin: 0 0 .9rem 0;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: .75rem;
+        }
+
+        .example-card {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: all .25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: transform .25s ease;
+        }
+
+        .example-card:hover {
+            background: var(--card-hover);
+            border-color: var(--primary-solid);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .example-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .example-card.featured {
+            background: var(--primary);
+            border: none;
+        }
+
+        .example-card h4 {
+            margin: 0 0 .35rem 0;
+            font-size: .98rem;
+            font-weight: 800;
+        }
+
+        .example-card p {
+            margin: 0;
+            font-size: .85rem;
+            color: var(--text-secondary);
+        }
+
+        .example-card.featured p {
+            color: rgba(255, 255, 255, .9);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+            user-select: none;
+            z-index: 1;
+        }
+
+        .canvas-wrapper:active {
+            cursor: grabbing;
+        }
+
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 85%;
+            max-width: 640px;
+            z-index: 2;
+        }
+
+        .empty-state .icon {
+            font-size: 4.6rem;
+            margin-bottom: 1rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: float 3.2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-12px)
+            }
+        }
+
+        .empty-state h2 {
+            margin: 0 0 .5rem 0;
+            font-size: 2.1rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .empty-state p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+
+        .perf-info {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 10;
+            font-size: .82rem;
+            color: var(--text-muted);
+            padding: .55rem .8rem;
+            border-radius: var(--radius-md);
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            font-family: 'Courier New', monospace;
+        }
+
+        .step-info {
+            position: fixed;
+            top: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(92%, 680px);
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--radius-xl);
+            z-index: 20;
+            animation: fadeInDown .5s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -24px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0)
+            }
+        }
+
+        .step-info h3 {
+            margin: 0 0 .5rem 0;
+            font-size: 1.35rem;
+            font-weight: 900;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .step-info p {
+            margin: 0 .2rem .6rem 0;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .step-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .35rem .6rem;
+            border-radius: 999px;
+            font-size: .78rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .badge i {
+            font-size: .85rem;
+        }
+
+        .timeline {
+            position: fixed;
+            bottom: 7rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: .9rem;
+            padding: .9rem 1.2rem;
+            border-radius: var(--radius-xl);
+            max-width: 92vw;
+            overflow-x: auto;
+            z-index: 12;
+        }
+
+        .timeline::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .timeline::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .step-box {
+            padding: .75rem 1.25rem;
+            border-radius: var(--radius-md);
+            background: var(--card-bg);
+            color: var(--text-secondary);
+            border: 2px solid transparent;
+            font-weight: 800;
+            font-size: .92rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: transform .25s cubic-bezier(.34, 1.56, .64, 1), background .25s, border-color .25s;
+        }
+
+        .step-box:hover {
+            background: var(--card-hover);
+            border-color: var(--glass-border);
+        }
+
+        .step-box.active {
+            background: var(--primary);
+            color: #fff;
+            transform: scale(1.08);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .step-arrow {
+            display: grid;
+            place-items: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            padding: 0 .2rem;
+        }
+
+        .controls-bar {
+            position: fixed;
+            bottom: 1.9rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.25rem 1.25rem;
+            border-radius: var(--radius-xl);
+            z-index: 15;
+            animation: slideUp .55s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 80px);
+                opacity: 0
+            }
+
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1
+            }
+        }
+
+        .control-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            transition: transform .25s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s, background .25s;
+            position: relative;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-md);
+            padding: 1px;
+            background: var(--primary);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity .25s ease;
+        }
+
+        .control-btn:hover {
+            background: var(--card-hover);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .control-btn:hover::before {
+            opacity: 1;
+        }
+
+        .control-btn.play-btn {
+            width: 64px;
+            height: 64px;
+            background: var(--primary);
+            color: #fff;
+            box-shadow: var(--shadow-glow);
+            font-size: 1.8rem;
+        }
+
+        .control-btn.play-btn:hover {
+            transform: translateY(-6px) scale(1.1);
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            background: rgba(6, 8, 20, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 3000;
+            overflow-y: auto;
+            padding: 6rem 2rem 3rem;
+        }
+
+        .modal-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .modal-close {
+            position: fixed;
+            top: 1.5rem;
+            right: 2rem;
+            font-size: 3rem;
+            color: #fff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform .3s, color .3s;
+            z-index: 3100;
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg) scale(1.2);
+            color: var(--primary-solid);
+        }
+
+        .step-container {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 2.2rem;
+            margin-bottom: 2.2rem;
+            animation: fadeInScale .45s ease;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(.965)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .step-container h3 {
+            margin: 0 0 .7rem 0;
+            font-size: 1.6rem;
+            font-weight: 900;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .step-container p {
+            margin: 0 0 1.3rem 0;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .canvas-box {
+            width: 100%;
+            height: 340px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, .35);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .step-divider {
+            text-align: center;
+            font-size: 3.2rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 1.6rem 0;
+        }
+
+        .teacher-overlay {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            width: min(480px, 92vw);
+            border-radius: var(--radius-xl);
+            padding: 1rem;
+            z-index: 2200;
+            border: 1px solid var(--glass-border);
+        }
+
+        .teacher-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .2rem .2rem .6rem .2rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .teacher-title {
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .teacher-body {
+            max-height: 240px;
+            overflow: auto;
+            padding: .6rem 0 .4rem 0;
+        }
+
+        .teacher-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .teacher-body::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .hint-row {
+            display: flex;
+            align-items: baseline;
+            gap: .4rem;
+            color: var(--text-secondary);
+            padding: .2rem 0;
+        }
+
+        .teacher-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: .6rem;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 92vw;
+            }
+
+            .step-info {
+                width: min(95%, 720px);
+            }
+
+            .controls-bar {
+                bottom: 1.2rem;
+                gap: .65rem;
+            }
+
+            .control-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+
+            .control-btn.play-btn {
+                width: 58px;
+                height: 58px;
+                font-size: 1.6rem;
+            }
+
+            .timeline {
+                bottom: 6.4rem;
+                gap: .6rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sidebar-toggle {
+                width: 52px;
+                height: 52px;
+                font-size: 1.5rem;
+            }
+
+            .perf-info {
+                top: .9rem;
+                right: .9rem;
+                font-size: .76rem;
+            }
+
+            .empty-state h2 {
+                font-size: 1.7rem;
+            }
+
+            .empty-state p {
+                font-size: .98rem;
+            }
+
+            .step-info h3 {
+                font-size: 1.15rem;
+            }
+
+            .step-container h3 {
+                font-size: 1.35rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="sidebar-toggle glass" id="sidebarToggle" title="Toggle Controls">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <aside class="sidebar glass" id="sidebar">
+        <div class="sidebar-header">
+            <h2>⚗️ Mechanism Studio Pro</h2>
+            <p>Professional chemistry visualization with intelligent features</p>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="bi bi-lightbulb-fill"></i>
+            <span><strong>Pro Tip:</strong> Load an example or paste JSON, then visualize</span>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" for="jsonInput">
+                <i class="bi bi-code-square"></i> Mechanism JSON
+            </label>
+            <div class="input-wrapper">
+                <textarea id="jsonInput" class="input-field" placeholder="Paste your mechanism JSON here..."></textarea>
+                <div class="json-actions">
+                    <button class="btn btn-icon glass" id="pasteBtn" title="Paste">
+                        <i class="bi bi-clipboard-plus"></i>
+                    </button>
+                    <button class="btn btn-icon glass" id="clearBtn" title="Clear">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="visualizeBtn">
+            <i class="bi bi-play-circle-fill"></i>
+            <span>Visualize Mechanism</span>
+        </button>
+
+        <div class="examples-section">
+            <h3><i class="bi bi-collection-fill"></i> Example Mechanisms</h3>
+            <div class="examples-grid">
+                <div class="example-card featured" data-example="Comprehensive Demo">
+                    <h4>🔬 Multi-Step Synthesis</h4>
+                    <p>Complete radical, substitution, and elimination sequence</p>
+                </div>
+                <div class="example-card" data-example="SN2">
+                    <h4>⚛️ SN2 Reaction</h4>
+                    <p>Backside attack with stereochemical inversion</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusMessages"></div>
+    </aside>
+
+    <main class="canvas-wrapper" id="canvasContainer">
+        <div class="empty-state" id="emptyState">
+            <div class="icon"><i class="bi bi-diagram-3-fill"></i></div>
+            <h2>Chemistry Visualizer Pro</h2>
+            <p>Transform complex mechanisms into beautiful, intelligent visualizations</p>
+        </div>
+        <div class="perf-info">
+            FPS: <span id="fpsDisplay">0</span> | Scale: <span id="scaleDisplay">1.0x</span>
+        </div>
+    </main>
+
+    <section class="step-info glass" id="stepInfo" style="display:none;">
+        <h3 id="stepTitle">Step Title</h3>
+        <p id="stepDescription">Description</p>
+        <div class="step-tags" id="stepBadges"></div>
+    </section>
+
+    <div class="timeline glass" id="timeline" style="display:none;"></div>
+
+    <div class="controls-bar glass" id="controls" style="display:none;">
+        <button class="control-btn" id="prevBtn" title="Previous (←)">
+            <i class="bi bi-skip-start-fill"></i>
+        </button>
+        <button class="control-btn play-btn" id="playBtn" title="Play/Pause (Space)">
+            <i class="bi bi-play-fill"></i>
+        </button>
+        <button class="control-btn" id="nextBtn" title="Next (→)">
+            <i class="bi bi-skip-end-fill"></i>
+        </button>
+        <button class="control-btn" id="narrationBtn" title="Narration (M)">
+            <i class="bi bi-volume-up-fill"></i>
+        </button>
+        <button class="control-btn" id="resetViewBtn" title="Reset View (R)">
+            <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+        <button class="control-btn" id="overviewBtn" title="Overview (V)">
+            <i class="bi bi-diagram-3-fill"></i>
+        </button>
+        <button class="control-btn" id="teacherModeBtn" title="Teacher Mode (T)">
+            <i class="bi bi-mortarboard-fill"></i>
+        </button>
+    </div>
+
+    <div class="modal" id="staticModal" style="display:none;">
+        <button class="modal-close" id="closeModalBtn">×</button>
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <div class="teacher-overlay glass" id="teacherOverlay" style="display:none;">
+        <div class="teacher-header">
+            <div class="teacher-title">
+                <i class="bi bi-mortarboard-fill"></i> Teaching Hints
+            </div>
+            <button id="teacherClose" class="btn btn-icon" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="teacher-body" id="teacherBody"></div>
+        <div class="teacher-footer">
+            <button id="copyHints" class="btn btn-success">
+                <i class="bi bi-clipboard-check"></i> Copy Hints
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ========= GLOBAL STATE =========
+        let mechanismData = null;
+        let p5Instance = null;
+        let currentStep = 0;
+        let isPlaying = false;
+        let narrationEnabled = true;
+        let speechEnginePrimed = false;
+        let molecules = {};
+        let stepStartTime = 0;
+        let scaleFactor = 1.0;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let staticInstances = [];
+        let initialScale = 1.0;
+        let initialPanX = 0;
+        let initialPanY = 0;
+
+        // ========= INTELLIGENT BADGE SYSTEM =========
+        /**
+         * Analyzes step content and auto-generates contextual badges
+         * This provides at-a-glance information about reaction type and key features
+         */
+        function computeStepBadges(step) {
+            const badges = [];
+            const title = (step.title || "").toLowerCase();
+            const desc = ((step.description || "") + " " + (step.narration || "")).toLowerCase();
+
+            // Reaction type detection
+            if (title.includes("radical")) badges.push({
+                text: "Radical",
+                icon: "bi-lightning-fill",
+                color: "#f59e0b"
+            });
+            if (title.includes("initiation")) badges.push({
+                text: "Initiation",
+                icon: "bi-rocket-takeoff-fill",
+                color: "#22c55e"
+            });
+            if (title.includes("propagation")) badges.push({
+                text: "Propagation",
+                icon: "bi-shuffle",
+                color: "#3b82f6"
+            });
+            if (title.includes("elimination") || title.includes("product")) badges.push({
+                text: "Product",
+                icon: "bi-beaker",
+                color: "#8b5cf6"
+            });
+            if (title.includes("sn2")) badges.push({
+                text: "SN2",
+                icon: "bi-arrow-left-right",
+                color: "#ef4444"
+            });
+            if (title.includes("sn1")) badges.push({
+                text: "SN1",
+                icon: "bi-arrow-return-right",
+                color: "#f97316"
+            });
+            if (title.includes("e2")) badges.push({
+                text: "E2",
+                icon: "bi-arrow-up-right",
+                color: "#06b6d4"
+            });
+            if (title.includes("e1")) badges.push({
+                text: "E1",
+                icon: "bi-arrow-up",
+                color: "#0ea5e9"
+            });
+
+            // Mechanistic features
+            if (desc.includes("attack") || desc.includes("transfer") || desc.includes("electron")) {
+                badges.push({
+                    text: "Electron Flow",
+                    icon: "bi-arrow-return-right",
+                    color: "#8b5cf6"
+                });
+            }
+            if (desc.includes("stereochemistry") || desc.includes("inversion") || desc.includes("configuration") || desc.includes("wedge") || desc.includes("dash")) {
+                badges.push({
+                    text: "Stereochemistry",
+                    icon: "bi-diagram-2-fill",
+                    color: "#ec4899"
+                });
+            }
+            if (desc.includes("intermediate")) {
+                badges.push({
+                    text: "Intermediate",
+                    icon: "bi-hourglass-split",
+                    color: "#a855f7"
+                });
+            }
+            if (desc.includes("transition state")) {
+                badges.push({
+                    text: "Transition State",
+                    icon: "bi-graph-up-arrow",
+                    color: "#6366f1"
+                });
+            }
+
+            return badges;
+        }
+
+        // ========= INTELLIGENT TEACHING HINTS SYSTEM =========
+        /**
+         * Auto-generates pedagogically sound teaching hints for educators
+         * Analyzes step content to provide discussion points and questions
+         */
+        function buildTeacherHints(step) {
+            const hints = [];
+            const title = (step.title || "").toLowerCase();
+            const desc = ((step.description || "") + " " + (step.narration || "")).toLowerCase();
+
+            // Core transformation
+            if (step.title) {
+                hints.push({
+                    icon: "bi-chat-square-quote",
+                    text: `Define the core transformation: "${step.title}"`
+                });
+            }
+
+            // Key mechanistic feature
+            if (step.description) {
+                hints.push({
+                    icon: "bi-key",
+                    text: `Key mechanistic feature: ${step.description}`
+                });
+            }
+
+            // Electron density analysis
+            hints.push({
+                icon: "bi-lightning-charge",
+                text: "Ask: Where does electron density start and end in this step?"
+            });
+
+            // Bond analysis
+            hints.push({
+                icon: "bi-link-45deg",
+                text: "Ask: Which bond is breaking? Which is forming? Why?"
+            });
+
+            // Stereochemistry check
+            if (desc.includes("wedge") || desc.includes("dash") || desc.includes("stereo") || desc.includes("configuration")) {
+                hints.push({
+                    icon: "bi-diagram-3",
+                    text: "Check: Does stereochemistry (wedge/dash) match mechanism?"
+                });
+            }
+
+            // Intermediates and transition states
+            if (desc.includes("intermediate") || desc.includes("transition")) {
+                hints.push({
+                    icon: "bi-hourglass-split",
+                    text: "Discuss: What are the intermediates and transition states?"
+                });
+            }
+
+            // Reaction factors
+            hints.push({
+                icon: "bi-thermometer-half",
+                text: "Discuss: What factors (solvent, temp, etc.) favor this pathway?"
+            });
+
+            // Alternative mechanisms
+            hints.push({
+                icon: "bi-diagram-2",
+                text: "Consider: What alternative mechanisms could occur?"
+            });
+
+            // Energy considerations
+            if (title.includes("radical") || title.includes("initiation")) {
+                hints.push({
+                    icon: "bi-fire",
+                    text: "Energy: What energy input is needed for this step?"
+                });
+            }
+
+            return hints;
+        }
+
+        // ========= SMART RUNTIME STYLING ENGINE =========
+        /**
+         * Intelligent visual emphasis system that analyzes step content
+         * and automatically highlights key features (charged atoms, electron flow, etc.)
+         * This creates a more engaging and educational visualization
+         */
+        function getRuntimeStyler(step) {
+            const highlightColor = "#8b5cf6";
+            const activeColor = "#22c55e";
+
+            return (molDict) => {
+                // Phase 1: Reset all styling
+                for (const key of Object.keys(molDict)) {
+                    const mol = molDict[key];
+                    if (!mol) continue;
+
+                    if (mol.bonds) {
+                        mol.bonds.forEach(b => {
+                            b.runtimeColor = b.color || "#94a3b8";
+                            b.runtimeAlpha = 255;
+                            b.runtimeWeight = 4;
+                        });
+                    }
+                    if (mol.atoms) {
+                        mol.atoms.forEach(a => {
+                            a.runtimeHalo = false;
+                            a.runtimeGlow = false;
+                        });
+                    }
+                }
+
+                // Phase 2: Intelligent emphasis based on step analysis
+                const badges = computeStepBadges(step);
+                const hasElectronFlow = badges.some(b => b.text === "Electron Flow");
+                const hasStereo = badges.some(b => b.text === "Stereochemistry");
+
+                // Emphasize charged atoms and their bonds
+                for (const key of Object.keys(molDict)) {
+                    const mol = molDict[key];
+                    if (!mol || !mol.atoms || !mol.bonds) continue;
+
+                    const chargedIds = new Set(
+                        mol.atoms.filter(a => a.charge !== undefined && a.charge !== 0).map(a => a.id)
+                    );
+
+                    // Highlight bonds connected to charged atoms
+                    mol.bonds.forEach(b => {
+                        if (chargedIds.has(b.from) || chargedIds.has(b.to)) {
+                            b.runtimeColor = highlightColor;
+                            b.runtimeWeight = 5.5;
+                        }
+                    });
+
+                    // Add glow to charged atoms
+                    mol.atoms.forEach(a => {
+                        if (chargedIds.has(a.id)) {
+                            a.runtimeGlow = true;
+                        }
+                    });
+                }
+
+                // Emphasize electron flow if detected
+                if (hasElectronFlow) {
+                    for (const key of Object.keys(molDict)) {
+                        const mol = molDict[key];
+                        if (!mol || !mol.bonds) continue;
+
+                        mol.bonds.forEach(b => {
+                            if (b.runtimeColor === "#94a3b8") {
+                                b.runtimeColor = highlightColor;
+                                b.runtimeAlpha = 200; // Subtle pulse effect
+                            }
+                        });
+                    }
+                }
+
+                // Emphasize stereochemistry features
+                if (hasStereo) {
+                    for (const key of Object.keys(molDict)) {
+                        const mol = molDict[key];
+                        if (!mol || !mol.bonds) continue;
+
+                        mol.bonds.forEach(b => {
+                            if (b.type === "wedge" || b.type === "dash") {
+                                b.runtimeColor = activeColor;
+                                b.runtimeWeight = 6;
+                            }
+                        });
+                    }
+                }
+
+                // Emphasize radical atoms
+                for (const key of Object.keys(molDict)) {
+                    const mol = molDict[key];
+                    if (!mol || !mol.atoms) continue;
+
+                    mol.atoms.forEach(a => {
+                        if (a.radical) {
+                            a.runtimeHalo = true;
+                        }
+                    });
+                }
+            };
+        }
+
+        // ========= EXAMPLE DATA =========
+        const examples = {
+            "SN2": `{"meta":{"reactionName":"SN2 Reaction"},
+                "molecules":{
+                    "hydroxide":{"position":{"x":-250,"y":0},
+                        "atoms":[
+                            {"id":"o1","element":"O","position":{"x":0,"y":0},"charge":-1},
+                            {"id":"h1","element":"H","position":{"x":40,"y":0}}
+                        ],
+                        "bonds":[{"id":"o1_h1","from":"o1","to":"h1","type":"single"}]
+                    },
+                    "bromomethane":{"position":{"x":0,"y":0},
+                        "atoms":[
+                            {"id":"c1","element":"C","position":{"x":0,"y":0}},
+                            {"id":"br1","element":"Br","position":{"x":60,"y":0}},
+                            {"id":"h1","element":"H","position":{"x":-25,"y":45}},
+                            {"id":"h2","element":"H","position":{"x":-35,"y":-35}}
+                        ],
+                        "bonds":[
+                            {"id":"c1_br1","from":"c1","to":"br1","type":"single"},
+                            {"id":"c1_h1","from":"c1","to":"h1","type":"wedge"},
+                            {"id":"c1_h2","from":"c1","to":"h2","type":"dash"}
+                        ]
+                    },
+                    "methanol":{"position":{"x":250,"y":0},
+                        "atoms":[
+                            {"id":"c1","element":"C","position":{"x":0,"y":0}},
+                            {"id":"o1","element":"O","position":{"x":-60,"y":0}},
+                            {"id":"h_o","element":"H","position":{"x":-90,"y":20}},
+                            {"id":"h1","element":"H","position":{"x":25,"y":45}},
+                            {"id":"h2","element":"H","position":{"x":35,"y":-35}}
+                        ],
+                        "bonds":[
+                            {"id":"c1_o1","from":"c1","to":"o1","type":"single"},
+                            {"id":"o1_h","from":"o1","to":"h_o","type":"single"},
+                            {"id":"c1_h1","from":"c1","to":"h1","type":"dash"},
+                            {"id":"c1_h2","from":"c1","to":"h2","type":"wedge"}
+                        ]
+                    },
+                    "bromide":{"position":{"x":450,"y":0},
+                        "atoms":[{"id":"br1","element":"Br","position":{"x":0,"y":0},"charge":-1}]
+                    }
+                },
+                "mechanism":[
+                    {"step":1,"title":"Nucleophilic Attack (SN2)","narration":"Hydroxide attacks carbon from backside, breaking C-Br bond.","description":"Backside attack yields inversion of stereochemical configuration.","displayMolecules":["hydroxide","bromomethane"]},
+                    {"step":2,"title":"Product Formation","narration":"Methanol forms with inverted stereochemistry.","description":"Stereochemical inversion observed at carbon center with bromide leaving.","displayMolecules":["methanol","bromide"]}
+                ]}`,
+
+            "Comprehensive Demo": `{ "meta": { "reactionName": "Synthesis of Propene from Propane", "reactionType": "Radical Substitution -> SN2 -> E1 Elimination" }, "molecules": { "propane": { "position": {"x": -250, "y": 0}, "atoms": [ {"id": "c1", "element": "C", "position": {"x": -60, "y": 0}}, {"id": "c2", "element": "C", "position": {"x": 0, "y": 0}}, {"id": "c3", "element": "C", "position": {"x": 60, "y": 0}}, {"id": "h_c2", "element": "H", "position": {"x": 0, "y": -50}} ], "bonds": [ {"id": "c1_c2", "from": "c1", "to": "c2", "type": "single"}, {"id": "c2_c3", "from": "c2", "to": "c3", "type": "single"}, {"id": "c2_h", "from": "c2", "to": "h_c2", "type": "single"} ] }, "br2": { "position": {"x": -200, "y": -150}, "atoms": [ {"id": "br1", "element": "Br", "position": {"x": -30, "y": 0}}, {"id": "br2", "element": "Br", "position": {"x": 30, "y": 0}} ], "bonds": [{"id": "br1_br2", "from": "br1", "to": "br2", "type": "single"}] }, "br_rad": { "position": {"x": -50, "y": 0}, "atoms": [{"id": "br1", "element": "Br", "position": {"x": 0, "y": 0}, "radical": true}] }, "bromoPropane": { "position": {"x": 250, "y": 0}, "atoms": [ {"id": "c1", "element": "C", "position": {"x": 0, "y": 0}}, {"id": "br1", "element": "Br", "position": {"x": 0, "y": 60}}, {"id": "h1", "element": "H", "position": {"x": -52, "y": -30}}, {"id": "me1", "element": "C", "position": {"x": 52, "y": -30}} ], "bonds": [ {"id": "c1_br1", "from": "c1", "to": "br1", "type": "single"}, {"id": "c1_h1", "from": "c1", "to": "h1", "type": "dash"}, {"id": "c1_me1", "from": "c1", "to": "me1", "type": "wedge"} ] }, "hydroxide": { "position": {"x": -400, "y": 0}, "atoms": [ {"id": "o1", "element": "O", "position": {"x": 0, "y": 0}, "charge": -1}, {"id": "h1", "element": "H", "position": {"x": 30, "y": -20}} ], "bonds": [{"id": "o1_h1", "from": "o1", "to": "h1", "type": "single"}] }, "propanol": { "position": {"x": 200, "y": 0}, "atoms": [ {"id": "c1", "element": "C", "position": {"x": 0, "y": 0}}, {"id": "o1", "element": "O", "position": {"x": 0, "y": 60}}, {"id": "h_o", "element": "H", "position": {"x": 30, "y": 80}}, {"id": "h1", "element": "H", "position": {"x": 52, "y": -30}}, {"id": "me1", "element": "C", "position": {"x": -52, "y": -30}} ], "bonds": [ {"id": "c1_o1", "from": "c1", "to": "o1", "type": "single"}, {"id": "o1_h", "from": "o1", "to": "h_o", "type": "single"}, {"id": "c1_h1", "from": "c1", "to": "h1", "type": "wedge"}, {"id": "c1_me1", "from": "c1", "to": "me1", "type": "dash"} ] }, "proton": { "position": {"x": 0, "y": 0}, "atoms": [{"id": "h1", "element": "H", "position": {"x": 0, "y": 0}, "charge": 1}] }, "protonated_propanol": { "position": {"x": 200, "y": 0}, "atoms": [ {"id": "c1", "element": "C", "position": {"x": 0, "y": 0}}, {"id": "o1", "element": "O", "position": {"x": 0, "y": 60}, "charge": 1}, {"id": "h_o1", "element": "H", "position": {"x": 30, "y": 80}}, {"id": "h_o2", "element": "H", "position": {"x": -30, "y": 80}}, {"id": "h1", "element": "H", "position": {"x": 52, "y": -30}}, {"id": "me1", "element": "C", "position": {"x": -52, "y": -30}} ], "bonds": [ {"id": "c1_o1", "from": "c1", "to": "o1", "type": "single"}, {"id": "o1_h1", "from": "o1", "to": "h_o1", "type": "single"}, {"id": "o1_h2", "from": "o1", "to": "h_o2", "type": "single"}, {"id": "c1_h1", "from": "c1", "to": "h1", "type": "wedge"}, {"id": "c1_me1", "from": "c1", "to": "me1", "type": "dash"} ] }, "carbocation": { "position": {"x": 200, "y": 0}, "atoms": [ {"id": "c1", "element": "C", "position": {"x": 0, "y": 0}, "charge": 1}, {"id": "h1", "element": "H", "position": {"x": 0, "y": -50}}, {"id": "c2", "element": "C", "position": {"x": -50, "y": 25}}, {"id": "c3", "element": "C", "position": {"x": 50, "y": 25}} ], "bonds": [ {"id": "c1_h1", "from": "c1", "to": "h1", "type": "single"}, {"id": "c1_c2", "from": "c1", "to": "c2", "type": "single"}, {"id": "c1_c3", "from": "c1", "to": "c3", "type": "single"} ] }, "water": { "position": {"x": -400, "y": 0}, "atoms": [ {"id": "o1", "element": "O", "position": {"x": 0, "y": 0}}, {"id": "h1", "element": "H", "position": {"x": -30, "y": 20}}, {"id": "h2", "element": "H", "position": {"x": 30, "y": 20}} ], "bonds": [ {"id": "o1_h1", "from": "o1", "to": "h1", "type": "single"}, {"id": "o1_h2", "from": "o1", "to": "h2", "type": "single"} ] }, "propene": { "position": {"x": 200, "y": 0}, "atoms": [ {"id": "c1", "element": "C", "position": {"x": -30, "y": 0}}, {"id": "c2", "element": "C", "position": {"x": 30, "y": 0}}, {"id": "c3", "element": "C", "position": {"x": 90, "y": 0}} ], "bonds": [ {"id": "c1_c2", "from": "c1", "to": "c2", "type": "double"}, {"id": "c2_c3", "from": "c2", "to": "c3", "type": "single"} ] } }, "mechanism": [ { "step": 1, "title": "Step 1: Radical Initiation", "narration": "UV light splits bromine into two radicals.", "description": "Homolytic cleavage of the Br-Br bond initiates the chain reaction.", "displayMolecules": ["br2"] }, { "step": 2, "title": "Step 2: Radical Propagation", "narration": "A bromine radical abstracts a hydrogen from propane.", "description": "The radical attacks the more stable secondary carbon, forming 2-bromopropane.", "displayMolecules": ["propane", "br_rad"] }, { "step": 3, "title": "Step 3: SN2 Substitution", "narration": "Hydroxide performs a backside attack, displacing bromide.", "description": "This SN2 reaction causes a complete inversion of stereochemistry (Walden Inversion).", "displayMolecules": ["bromoPropane", "hydroxide"] }, { "step": 4, "title": "Step 4: E1 - Protonation", "narration": "Acid protonates the alcohol, making it a good leaving group.", "description": "The -OH group is converted into a stable water molecule (-OH2+), which can easily leave.", "displayMolecules": ["propanol", "proton"] }, { "step": 5, "title": "Step 5: E1 - Carbocation Formation", "narration": "The leaving group departs, forming a secondary carbocation.", "description": "This slow, rate-determining step creates a planar carbocation intermediate.", "displayMolecules": ["protonated_propanol"] }, { "step": 6, "title": "Step 6: E1 - Deprotonation", "narration": "Water removes a proton, forming the propene double bond.", "description": "A weak base removes an adjacent proton, and the electrons form the new pi bond.", "displayMolecules": ["carbocation", "water"] }, { "step": 7, "title": "Final Product", "narration": "The synthesis is complete, yielding propene.", "description": "The alkane has been successfully converted into a more reactive alkene.", "displayMolecules": ["propene"] } ] }`
+        };
+
+        // ========= ATOM COLORS =========
+        const ATOM_COLORS = {
+            C: "#404040",
+            H: "#ffffff",
+            O: "#ef4444",
+            N: "#3b82f6",
+            Br: "#a16207",
+            Cl: "#16a34a",
+            F: "#22c55e",
+            S: "#f59e0b",
+            Al: "#a8a29e",
+            R: "#9ca3af"
+        };
+
+        // ========= DOM HELPERS =========
+        const $ = (id) => document.getElementById(id);
+
+        function showMessage(message, type = "info") {
+            const container = $("statusMessages");
+            const alert = document.createElement("div");
+            alert.className = `alert alert-${type}`;
+            const icons = {
+                info: "bi-info-circle-fill",
+                success: "bi-check-circle-fill",
+                warning: "bi-exclamation-triangle-fill",
+                danger: "bi-x-circle-fill"
+            };
+            alert.innerHTML = `<i class="bi ${icons[type]}"></i><span>${message}</span>`;
+            container.prepend(alert);
+            setTimeout(() => {
+                alert.style.transition = "opacity 0.5s ease";
+                alert.style.opacity = "0";
+                setTimeout(() => alert.remove(), 500);
+            }, 4500);
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                $("jsonInput").value = text;
+                showMessage("✓ Pasted from clipboard", "success");
+            } catch {
+                showMessage("Clipboard access denied. Use Ctrl/Cmd+V", "warning");
+            }
+        }
+
+        function findJSON(text) {
+            const match = text.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*})/);
+            if (!match) return null;
+            try {
+                return JSON.parse(match[1] || match[2]);
+            } catch {
+                return null;
+            }
+        }
+
+        function validateJSON(data) {
+            if (!data || !data.meta || !data.mechanism || !data.molecules) {
+                throw new Error("JSON must include meta, mechanism, and molecules");
+            }
+            if (!Array.isArray(data.mechanism) || data.mechanism.length === 0) {
+                throw new Error("Mechanism must be a non-empty array");
+            }
+        }
+
+        // ========= EVENT WIRING =========
+        $("sidebarToggle").onclick = () => $("sidebar").classList.toggle("open");
+        $("pasteBtn").onclick = pasteFromClipboard;
+        $("clearBtn").onclick = clearAll;
+        $("visualizeBtn").onclick = visualizeJSON;
+        $("prevBtn").onclick = prevStep;
+        $("nextBtn").onclick = nextStep;
+        $("playBtn").onclick = togglePlay;
+        $("narrationBtn").onclick = toggleNarration;
+        $("resetViewBtn").onclick = resetView;
+        $("overviewBtn").onclick = toggleStaticOverview;
+        $("teacherModeBtn").onclick = toggleTeacherMode;
+        $("closeModalBtn").onclick = toggleStaticOverview;
+        $("teacherClose").onclick = toggleTeacherMode;
+        $("copyHints").onclick = copyTeacherHints;
+
+        document.querySelectorAll(".example-card").forEach(card => {
+            card.onclick = () => {
+                const name = card.dataset.example;
+                if (examples[name]) {
+                    $("jsonInput").value = examples[name];
+                    showMessage(`✓ Loaded "${name}" example`, "info");
+                    if (!$("sidebar").classList.contains("open")) {
+                        $("sidebar").classList.add("open");
+                    }
+                }
+            };
+        });
+
+        // ========= VISUALIZATION =========
+        function visualizeJSON() {
+            const raw = $("jsonInput").value.trim();
+            if (!raw) return showMessage("Please paste mechanism JSON", "danger");
+
+            const parsed = findJSON(raw);
+            if (!parsed) return showMessage("No valid JSON found", "danger");
+
+            try {
+                validateJSON(parsed);
+            } catch (e) {
+                return showMessage(e.message, "danger");
+            }
+
+            mechanismData = parsed;
+            initVisualization();
+            $("controls").style.display = "flex";
+            $("stepInfo").style.display = "block";
+            $("timeline").style.display = "flex";
+            showMessage(`✓ ${mechanismData.mechanism.length} steps loaded`, "success");
+
+            if ($("sidebar").classList.contains("open")) {
+                $("sidebar").classList.remove("open");
+            }
+        }
+
+        function clearAll() {
+            $("jsonInput").value = "";
+            ["controls", "stepInfo", "timeline"].forEach(id => $(id).style.display = "none");
+            if (p5Instance) {
+                p5Instance.remove();
+                p5Instance = null;
+            }
+            $("emptyState").style.display = "block";
+            mechanismData = null;
+            currentStep = 0;
+            isPlaying = false;
+            panX = panY = 0;
+            scaleFactor = 1.0;
+            showMessage("Workspace cleared", "info");
+        }
+
+        function getMoleculeBounds(molKeys) {
+            let minX = Infinity,
+                minY = Infinity,
+                maxX = -Infinity,
+                maxY = -Infinity,
+                count = 0;
+            for (const key of molKeys) {
+                const mol = mechanismData.molecules[key];
+                if (!mol || !mol.atoms) continue;
+                const mx = mol.position?.x || 0,
+                    my = mol.position?.y || 0;
+                for (const atom of mol.atoms) {
+                    const x = atom.position.x + mx,
+                        y = atom.position.y + my;
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                    count++;
+                }
+            }
+            if (count === 0) return {
+                centerX: 0,
+                centerY: 0,
+                width: 1,
+                height: 1
+            };
+            return {
+                centerX: (minX + maxX) / 2,
+                centerY: (minY + maxY) / 2,
+                width: Math.max(1, maxX - minX),
+                height: Math.max(1, maxY - minY)
+            };
+        }
+
+        function drawMolecules(p, molKeys, allMolecules, options = {}) {
+            const {
+                time = 0, pulsateAlpha = false
+            } = options;
+            for (const key of molKeys) {
+                const mol = allMolecules[key];
+                if (!mol) continue;
+                p.push();
+                p.translate(mol.position?.x || 0, mol.position?.y || 0);
+                if (mol.bonds) drawBonds(p, mol, {
+                    time,
+                    pulsateAlpha
+                });
+                if (mol.atoms) drawAtoms(p, mol);
+                p.pop();
+            }
+        }
+
+        function drawBonds(p, molecule, options) {
+            const {
+                time,
+                pulsateAlpha
+            } = options;
+            const baseWeight = 4;
+
+            for (const bond of molecule.bonds) {
+                const a1 = molecule.atoms.find(a => a.id === bond.from);
+                const a2 = molecule.atoms.find(a => a.id === bond.to);
+                if (!a1 || !a2) continue;
+
+                const weight = bond.runtimeWeight ?? baseWeight;
+                const c = p.color(bond.runtimeColor || bond.color || "#94a3b8");
+                const alpha = (bond.runtimeAlpha ?? 255) * (pulsateAlpha ? (0.85 + 0.15 * p.sin(time * 0.08)) : 1);
+
+                p.stroke(p.red(c), p.green(c), p.blue(c), alpha);
+                p.fill(p.red(c), p.green(c), p.blue(c), alpha);
+
+                const x1 = a1.position.x,
+                    y1 = a1.position.y;
+                const x2 = a2.position.x,
+                    y2 = a2.position.y;
+
+                switch (bond.type) {
+                    case "double": {
+                        const offset = 5;
+                        const angle = p.atan2(y2 - y1, x2 - x1);
+                        const perp = angle + p.HALF_PI;
+                        const dx = offset * p.cos(perp),
+                            dy = offset * p.sin(perp);
+                        p.strokeWeight(weight / 2);
+                        p.line(x1 + dx, y1 + dy, x2 + dx, y2 + dy);
+                        p.line(x1 - dx, y1 - dy, x2 - dx, y2 - dy);
+                        break;
+                    }
+                    case "triple": {
+                        const offset = 6;
+                        const angle = p.atan2(y2 - y1, x2 - x1);
+                        const perp = angle + p.HALF_PI;
+                        const dx = offset * p.cos(perp),
+                            dy = offset * p.sin(perp);
+                        p.strokeWeight(weight / 3);
+                        p.line(x1, y1, x2, y2);
+                        p.line(x1 + dx, y1 + dy, x2 + dx, y2 + dy);
+                        p.line(x1 - dx, y1 - dy, x2 - dx, y2 - dy);
+                        break;
+                    }
+                    case "wedge": {
+                        p.noStroke();
+                        const angle = p.atan2(y2 - y1, x2 - x1) + p.HALF_PI;
+                        const w = 8;
+                        p.triangle(x1, y1, x2 + w * p.cos(angle), y2 + w * p.sin(angle),
+                            x2 - w * p.cos(angle), y2 - w * p.sin(angle));
+                        break;
+                    }
+                    case "dash": {
+                        p.strokeWeight(weight);
+                        p.drawingContext.setLineDash([6, 8]);
+                        p.line(x1, y1, x2, y2);
+                        p.drawingContext.setLineDash([]);
+                        break;
+                    }
+                    default: {
+                        p.strokeWeight(weight);
+                        p.line(x1, y1, x2, y2);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function drawAtoms(p, molecule) {
+            for (const atom of molecule.atoms) {
+                const color = ATOM_COLORS[atom.element] || "#94a3b8";
+                const size = atom.size || (atom.element === "H" ? 12 : 16);
+
+                // Intelligent glow/halo effects from runtime styler
+                if (atom.runtimeHalo) {
+                    p.noFill();
+                    p.stroke(255, 127, 0, 160);
+                    p.strokeWeight(3);
+                    p.circle(atom.position.x, atom.position.y, size * 3);
+                }
+
+                if (atom.runtimeGlow) {
+                    p.noFill();
+                    p.stroke(139, 92, 246, 120);
+                    p.strokeWeight(2);
+                    p.circle(atom.position.x, atom.position.y, size * 2.5);
+                }
+
+                // Atom core
+                p.fill(color);
+                p.stroke(255, 120);
+                p.strokeWeight(2);
+                p.ellipse(atom.position.x, atom.position.y, size * 2);
+
+                // Element label
+                if (atom.element !== "C" || molecule.atoms.length < 2) {
+                    p.fill(atom.element === "H" ? "#000" : "#fff");
+                    p.noStroke();
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.textSize(size * 0.9);
+                    p.textStyle(p.BOLD);
+                    p.text(atom.element, atom.position.x, atom.position.y + 1);
+                }
+
+                // Charge
+                if (atom.charge) {
+                    p.fill(atom.charge > 0 ? "#ef4444" : "#3b82f6");
+                    p.noStroke();
+                    p.textSize(size * 0.85);
+                    const chargeStr = (atom.charge > 0 ? "+" : "−") +
+                        (Math.abs(atom.charge) > 1 ? Math.abs(atom.charge) : "");
+                    p.text(chargeStr, atom.position.x + size * 0.9, atom.position.y - size * 0.9);
+                }
+
+                // Radical
+                if (atom.radical) {
+                    p.fill("#ef4444");
+                    p.noStroke();
+                    p.circle(atom.position.x + size * 0.9, atom.position.y - size * 0.9, size * 0.35);
+                }
+            }
+        }
+
+        function initVisualization() {
+            if (p5Instance) p5Instance.remove();
+            const container = $("canvasContainer");
+            const existing = container.querySelector("canvas");
+            if (existing) existing.remove();
+
+            $("emptyState").style.display = "none";
+            buildTimeline();
+
+            const sketch = (p) => {
+                p.setup = () => {
+                    const c = p.createCanvas(container.clientWidth, container.clientHeight);
+                    c.parent("canvasContainer");
+                    p.frameRate(60);
+                    p.textFont("Inter");
+
+                    const bounds = getMoleculeBounds(Object.keys(mechanismData.molecules));
+                    const padding = 1.6;
+                    scaleFactor = Math.min(
+                        p.width / (bounds.width * padding),
+                        p.height / (bounds.height * padding)
+                    );
+                    scaleFactor = Math.max(0.5, Math.min(3.0, scaleFactor));
+                    panX = p.width / 2 - bounds.centerX * scaleFactor;
+                    panY = p.height / 2 - bounds.centerY * scaleFactor;
+                    initialScale = scaleFactor;
+                    initialPanX = panX;
+                    initialPanY = panY;
+
+                    molecules = JSON.parse(JSON.stringify(mechanismData.molecules));
+                    currentStep = 0;
+                    isPlaying = false;
+
+                    updateStepInfo();
+                    updateTimeline();
+                };
+
+                p.mousePressed = (e) => {
+                    if (e.target.tagName !== "CANVAS") return;
+                    isDragging = true;
+                    lastMouseX = p.mouseX;
+                    lastMouseY = p.mouseY;
+                };
+
+                p.mouseReleased = () => {
+                    isDragging = false;
+                };
+
+                p.mouseDragged = () => {
+                    if (isDragging) {
+                        panX += p.mouseX - lastMouseX;
+                        panY += p.mouseY - lastMouseY;
+                        lastMouseX = p.mouseX;
+                        lastMouseY = p.mouseY;
+                    }
+                };
+
+                p.mouseWheel = (event) => {
+                    if (event.target.tagName !== "CANVAS") return;
+                    event.preventDefault();
+                    const zoomFactor = 1 - event.delta * 0.001;
+                    const newScale = scaleFactor * zoomFactor;
+                    if (newScale > 0.1 && newScale < 10) {
+                        const wx = (p.mouseX - panX) / scaleFactor;
+                        const wy = (p.mouseY - panY) / scaleFactor;
+                        panX = p.mouseX - wx * newScale;
+                        panY = p.mouseY - wy * newScale;
+                        scaleFactor = newScale;
+                        $("scaleDisplay").textContent = scaleFactor.toFixed(1) + "x";
+                    }
+                };
+
+                p.draw = () => {
+                    p.background(6, 8, 20);
+                    p.push();
+                    p.translate(panX, panY);
+                    p.scale(scaleFactor);
+
+                    const step = mechanismData?.mechanism?. [currentStep];
+                    if (step) {
+                        // Apply intelligent runtime styling
+                        const temp = JSON.parse(JSON.stringify(mechanismData.molecules));
+                        const styler = getRuntimeStyler(step);
+                        styler(temp);
+                        const time = Date.now() - stepStartTime;
+                        drawMolecules(p, step.displayMolecules, temp, {
+                            time,
+                            pulsateAlpha: true
+                        });
+                    }
+
+                    p.pop();
+                };
+
+                p.windowResized = () => {
+                    p.resizeCanvas(container.clientWidth, container.clientHeight);
+                };
+            };
+
+            p5Instance = new p5(sketch);
+        }
+
+        // ========= TWO-PHASE STATIC OVERVIEW (BUG FIXED!) =========
+        /**
+         * COMPLETELY REWRITTEN to fix persistent blank canvas bug
+         * Uses two-phase rendering:
+         * 1. Build HTML structure
+         * 2. Show modal (forces browser layout calculation)
+         * 3. Create p5 instances with guaranteed dimensions
+         */
+        function toggleStaticOverview() {
+            const modal = $("staticModal");
+            const content = $("modalContent");
+            const isVisible = modal.style.display === "block";
+
+            if (isVisible) {
+                modal.style.display = "none";
+                staticInstances.forEach(s => s.remove());
+                staticInstances = [];
+                return;
+            }
+
+            if (!mechanismData) {
+                showMessage("Visualize a mechanism first", "warning");
+                return;
+            }
+
+            // PHASE 1: Build complete HTML structure
+            content.innerHTML = "";
+            const stepContainers = [];
+
+            mechanismData.mechanism.forEach((step, index) => {
+                const wrap = document.createElement("div");
+                wrap.className = "step-container";
+
+                const title = document.createElement("h3");
+                title.textContent = `Step ${step.step || index + 1}: ${step.title || "Untitled"}`;
+                wrap.appendChild(title);
+
+                const desc = document.createElement("p");
+                desc.textContent = step.description || step.narration || "No description";
+                wrap.appendChild(desc);
+
+                // Add intelligent badges
+                const badgeRow = document.createElement("div");
+                badgeRow.className = "badge-row";
+                const badges = computeStepBadges(step);
+                badges.forEach(b => {
+                    const el = document.createElement("span");
+                    el.className = "badge glass";
+                    el.innerHTML = `<i class="bi ${b.icon}"></i> ${b.text}`;
+                    badgeRow.appendChild(el);
+                });
+                if (badges.length) wrap.appendChild(badgeRow);
+
+                const canvasBox = document.createElement("div");
+                canvasBox.className = "canvas-box";
+                canvasBox.id = `static-canvas-${index}`;
+                wrap.appendChild(canvasBox);
+
+                content.appendChild(wrap);
+                stepContainers.push({
+                    step,
+                    canvasBox,
+                    index
+                });
+
+                if (index < mechanismData.mechanism.length - 1) {
+                    const divider = document.createElement("div");
+                    divider.className = "step-divider";
+                    divider.innerHTML = "↓";
+                    content.appendChild(divider);
+                }
+            });
+
+            // PHASE 2: Show modal and force layout
+            modal.style.display = "block";
+
+            // Force browser to calculate all dimensions
+            modal.offsetHeight;
+
+            // PHASE 3: Create p5 instances (now with guaranteed dimensions)
+            setTimeout(() => {
+                staticInstances = [];
+
+                stepContainers.forEach(({
+                    step,
+                    canvasBox,
+                    index
+                }) => {
+                    const stepSketch = (p) => {
+                        p.setup = () => {
+                            const c = p.createCanvas(canvasBox.clientWidth, canvasBox.clientHeight);
+                            c.parent(canvasBox.id);
+                            p.noLoop();
+                            p.textFont("Inter");
+                        };
+
+                        p.draw = () => {
+                            p.background(6, 8, 20);
+                            const bounds = getMoleculeBounds(step.displayMolecules);
+                            const padding = 1.35;
+                            const scale = Math.min(
+                                p.width / (bounds.width * padding),
+                                p.height / (bounds.height * padding)
+                            );
+
+                            // Apply same intelligent styling as animation
+                            const temp = JSON.parse(JSON.stringify(mechanismData.molecules));
+                            const styler = getRuntimeStyler(step);
+                            styler(temp);
+
+                            p.push();
+                            p.translate(p.width / 2, p.height / 2);
+                            p.scale(scale);
+                            p.translate(-bounds.centerX, -bounds.centerY);
+                            drawMolecules(p, step.displayMolecules, temp, {
+                                time: 0,
+                                pulsateAlpha: false
+                            });
+                            p.pop();
+                        };
+                    };
+
+                    staticInstances.push(new p5(stepSketch));
+                });
+            }, 50); // Small delay ensures layout is complete
+        }
+
+        // ========= STEP CONTROLS =========
+        function updateStepInfo() {
+            const step = mechanismData?.mechanism?. [currentStep];
+            if (!step) return;
+
+            $("stepTitle").textContent = step.title || `Step ${step.step || currentStep + 1}`;
+            $("stepDescription").textContent = step.description || step.narration || "No description";
+
+            // Display intelligent badges
+            const badges = computeStepBadges(step);
+            const row = $("stepBadges");
+            row.innerHTML = "";
+            badges.forEach(b => {
+                const el = document.createElement("span");
+                el.className = "badge glass";
+                el.innerHTML = `<i class="bi ${b.icon}"></i> ${b.text}`;
+                row.appendChild(el);
+            });
+
+            // Update teacher hints
+            renderTeacherHints(step);
+        }
+
+        function buildTimeline() {
+            const container = $("timeline");
+            container.innerHTML = "";
+
+            mechanismData?.mechanism?.forEach((step, index) => {
+                const box = document.createElement("div");
+                box.className = "step-box";
+                box.id = `step-box-${index}`;
+                box.textContent = `Step ${step.step || index + 1}`;
+                box.onclick = () => jumpToStep(index);
+                container.appendChild(box);
+
+                if (index < mechanismData.mechanism.length - 1) {
+                    const arrow = document.createElement("div");
+                    arrow.className = "step-arrow";
+                    arrow.innerHTML = "→";
+                    container.appendChild(arrow);
+                }
+            });
+            updateTimeline();
+        }
+
+        function updateTimeline() {
+            document.querySelectorAll(".step-box").forEach((box, i) => {
+                box.classList.toggle("active", i === currentStep);
+            });
+            const active = document.querySelector(`#step-box-${currentStep}`);
+            active?.scrollIntoView({
+                behavior: "smooth",
+                inline: "center",
+                block: "nearest"
+            });
+        }
+
+        function jumpToStep(index) {
+            if (index < 0 || index >= mechanismData.mechanism.length) return;
+            currentStep = index;
+            stepStartTime = Date.now();
+            updateStepInfo();
+            updateTimeline();
+            if ("speechSynthesis" in window) speechSynthesis.cancel();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            $("playBtn").innerHTML = isPlaying ?
+                '<i class="bi bi-pause-fill"></i>' :
+                '<i class="bi bi-play-fill"></i>';
+
+            if (isPlaying) {
+                if (!speechEnginePrimed && "speechSynthesis" in window) {
+                    speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+                    speechEnginePrimed = true;
+                }
+                stepStartTime = Date.now();
+                playCurrentStep();
+            } else {
+                if ("speechSynthesis" in window) speechSynthesis.cancel();
+            }
+        }
+
+        function playCurrentStep() {
+            if (!isPlaying || !mechanismData || currentStep >= mechanismData.mechanism.length) {
+                isPlaying = false;
+                $("playBtn").innerHTML = '<i class="bi bi-play-fill"></i>';
+                return;
+            }
+
+            const step = mechanismData.mechanism[currentStep];
+            const onEnd = () => {
+                setTimeout(() => {
+                    if (isPlaying) nextStep();
+                }, 1200);
+            };
+
+            if (narrationEnabled && step.narration && "speechSynthesis" in window) {
+                const u = new SpeechSynthesisUtterance(step.narration);
+                u.onend = onEnd;
+                speechSynthesis.speak(u);
+            } else {
+                setTimeout(onEnd, 2500);
+            }
+        }
+
+        function nextStep() {
+            if (!mechanismData) return;
+
+            if (currentStep < mechanismData.mechanism.length - 1) {
+                currentStep++;
+            } else {
+                isPlaying = false;
+                $("playBtn").innerHTML = '<i class="bi bi-play-fill"></i>';
+                showMessage("🎉 Mechanism complete!", "success");
+                currentStep = 0;
+            }
+
+            stepStartTime = Date.now();
+            updateStepInfo();
+            updateTimeline();
+            if (isPlaying) playCurrentStep();
+        }
+
+        function prevStep() {
+            if (!mechanismData) return;
+            if (currentStep > 0) currentStep--;
+            else currentStep = mechanismData.mechanism.length - 1;
+
+            stepStartTime = Date.now();
+            updateStepInfo();
+            updateTimeline();
+            if ("speechSynthesis" in window) speechSynthesis.cancel();
+        }
+
+        function toggleNarration() {
+            narrationEnabled = !narrationEnabled;
+            $("narrationBtn").innerHTML = narrationEnabled ?
+                '<i class="bi bi-volume-up-fill"></i>' :
+                '<i class="bi bi-volume-mute-fill"></i>';
+            if (!narrationEnabled && "speechSynthesis" in window) {
+                speechSynthesis.cancel();
+            }
+        }
+
+        function resetView() {
+            scaleFactor = initialScale;
+            panX = initialPanX;
+            panY = initialPanY;
+            $("scaleDisplay").textContent = scaleFactor.toFixed(1) + "x";
+            showMessage("View reset", "info");
+        }
+
+        // ========= TEACHER MODE =========
+        function toggleTeacherMode() {
+            const el = $("teacherOverlay");
+            const visible = el.style.display === "block";
+            el.style.display = visible ? "none" : "block";
+            if (!visible) {
+                const step = mechanismData?.mechanism?. [currentStep];
+                if (step) renderTeacherHints(step);
+            }
+        }
+
+        function renderTeacherHints(step) {
+            const body = $("teacherBody");
+            if (!body) return;
+            const hints = buildTeacherHints(step);
+            body.innerHTML = "";
+            hints.forEach(h => {
+                const row = document.createElement("div");
+                row.className = "hint-row";
+                row.innerHTML = `<i class="bi ${h.icon}"></i> ${h.text}`;
+                body.appendChild(row);
+            });
+        }
+
+        function copyTeacherHints() {
+            const txt = Array.from(document.querySelectorAll("#teacherBody .hint-row"))
+                .map(n => n.textContent.trim())
+                .join("\n");
+            navigator.clipboard.writeText(txt).then(() => {
+                showMessage("✓ Hints copied to clipboard", "success");
+            });
+        }
+
+        // ========= KEYBOARD SHORTCUTS =========
+        document.addEventListener("keydown", (e) => {
+            const tag = document.activeElement.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+            if (e.code === "Escape") {
+                if ($("staticModal").style.display === "block") toggleStaticOverview();
+                if ($("teacherOverlay").style.display === "block") toggleTeacherMode();
+                return;
+            }
+
+            if (!mechanismData) return;
+
+            const map = {
+                Space: togglePlay,
+                ArrowLeft: prevStep,
+                ArrowRight: nextStep,
+                KeyM: toggleNarration,
+                KeyV: toggleStaticOverview,
+                KeyR: resetView,
+                KeyT: toggleTeacherMode
+            };
+
+            if (map[e.code]) {
+                e.preventDefault();
+                map[e.code]();
+            }
+        });
+
+        // ========= FPS COUNTER =========
+        setInterval(() => {
+            $("fpsDisplay").textContent = p5Instance ?
+                Math.round(p5Instance.frameRate()) : "0";
+        }, 1000);
+    </script>
+</body>
+
+</html>
