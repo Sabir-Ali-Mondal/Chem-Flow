@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Chemistry Mechanism Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-solid: #667eea;
+            --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --accent: #f093fb;
+            --dark-bg: #0a0e27;
+            --darker-bg: #060814;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --glass: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.35);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--darker-bg);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 30%, rgba(102, 126, 234, 0.18) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(118, 75, 162, 0.18) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(245, 87, 108, 0.10) 0%, transparent 50%);
+            animation: bgPulse 16s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes bgPulse {
+
+            0%,
+            100% {
+                opacity: .6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 1.25rem;
+            left: 1.25rem;
+            z-index: 1001;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-lg);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.75rem;
+            background: var(--primary);
+            box-shadow: var(--shadow-glow);
+            transition: transform .45s cubic-bezier(.68, -0.55, .265, 1.55), box-shadow .35s ease;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.08) rotate(90deg);
+            box-shadow: 0 0 40px rgba(102, 126, 234, .55);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            width: 380px;
+            height: 100vh;
+            padding: 5rem 1.5rem 2rem;
+            transform: translateX(-100%);
+            transition: transform .5s cubic-bezier(.68, -0.55, .265, 1.55);
+            overflow-y: auto;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .sidebar-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .sidebar-header h2 {
+            margin: 0 0 .5rem 0;
+            font-size: 1.55rem;
+            font-weight: 800;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin: 0 0 1rem 0;
+            padding: .9rem 1rem;
+            border-left: 4px solid;
+            border-radius: var(--radius-md);
+            animation: slideInLeft .4s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: none;
+                opacity: 1;
+            }
+        }
+
+        .alert i {
+            font-size: 1.1rem;
+        }
+
+        .alert-info {
+            background: rgba(102, 126, 234, .15);
+            border-color: #667eea;
+            color: #a0c4ff;
+        }
+
+        .alert-success {
+            background: rgba(79, 172, 254, .15);
+            border-color: #4facfe;
+            color: #8cc9ff;
+        }
+
+        .alert-danger {
+            background: rgba(245, 87, 108, .15);
+            border-color: #f5576c;
+            color: #ff8a95;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 700;
+            font-size: .96rem;
+            margin-bottom: .6rem;
+        }
+
+        .input-label i {
+            color: var(--primary-solid);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            min-height: 140px;
+            resize: vertical;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: .95rem;
+            line-height: 1.55;
+            font-family: 'Courier New', monospace;
+            transition: all .25s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-solid);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, .12);
+        }
+
+        .json-actions {
+            position: absolute;
+            top: .75rem;
+            right: .75rem;
+            display: flex;
+            gap: .5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .6rem;
+            padding: .9rem 1.2rem;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            letter-spacing: .2px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .25s, box-shadow .25s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-icon {
+            width: 42px;
+            height: 42px;
+            padding: 0;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        #overviewContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+            padding-left: calc(2rem + 72px);
+            z-index: 1;
+        }
+
+        #overviewContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #overviewContainer::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            width: 85%;
+            max-width: 640px;
+            margin: 10vh auto;
+        }
+
+        .empty-state .icon {
+            font-size: 4.6rem;
+            margin-bottom: 1rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: float 3.2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        .empty-state h2 {
+            margin: 0 0 .5rem 0;
+            font-size: 2.1rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .empty-state p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+
+        .step-container {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 2.2rem;
+            margin: 0 auto 2.2rem auto;
+            max-width: 1000px;
+            animation: fadeInScale .45s ease;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(.965)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .step-container h3 {
+            margin: 0 0 .7rem 0;
+            font-size: 1.6rem;
+            font-weight: 900;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .step-container p {
+            margin: 0 0 1.3rem 0;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .35rem .6rem;
+            border-radius: 999px;
+            font-size: .78rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .badge i {
+            font-size: .85rem;
+        }
+
+        .canvas-box {
+            position: relative;
+            width: 100%;
+            height: 340px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, .35);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            cursor: grab;
+        }
+
+        .canvas-box:active {
+            cursor: grabbing;
+        }
+
+        .canvas-controls {
+            position: absolute;
+            top: .75rem;
+            right: .75rem;
+            z-index: 5;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .step-divider {
+            text-align: center;
+            font-size: 3.2rem;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 auto 1.6rem auto;
+            max-width: 1000px;
+        }
+
+        details.learning-hints {
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.15);
+            margin-top: 1rem;
+        }
+
+        details.learning-hints summary {
+            font-weight: 700;
+            padding: .8rem 1rem;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        details.learning-hints summary::before {
+            content: "\f282";
+            font-family: "bootstrap-icons";
+            transition: transform .2s;
+        }
+
+        details[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        .learning-body {
+            padding: 0 1rem 1rem 1rem;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .hint-row {
+            display: flex;
+            align-items: baseline;
+            gap: .5rem;
+            color: var(--text-secondary);
+            padding: .4rem 0;
+        }
+
+        .hint-row strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="sidebar-toggle glass" id="sidebarToggle" title="Toggle Controls"><i class="bi bi-list"></i></button>
+    <aside class="sidebar glass" id="sidebar">
+        <div class="sidebar-header">
+            <h2>⚗️ Mechanism Explorer</h2>
+            <p>Generate interactive, animated mechanism overviews</p>
+        </div>
+        <div class="alert alert-info"><i class="bi bi-lightbulb-fill"></i><span><strong>Tip:</strong> Narration supports Bengali, Hindi & English. Use the speaker icon on each step.</span></div>
+        <div class="input-group">
+            <label class="input-label" for="jsonInput"><i class="bi bi-code-square"></i> Mechanism JSON</label>
+            <div class="input-wrapper">
+                <textarea id="jsonInput" class="input-field" placeholder="Paste your mechanism JSON here..."></textarea>
+                <div class="json-actions">
+                    <button class="btn btn-icon glass" id="pasteBtn" title="Paste"><i class="bi bi-clipboard-plus"></i></button>
+                    <button class="btn btn-icon glass" id="clearBtn" title="Clear"><i class="bi bi-trash3"></i></button>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="visualizeBtn"><i class="bi bi-play-circle-fill"></i><span>Generate Overview</span></button>
+        <div class="examples-section">
+            <h3><i class="bi bi-collection-fill"></i> Example Mechanisms</h3>
+            <div class="examples-grid" id="examplesGrid" style="margin:10px;padding:10px;border:solid yellow 2px;"></div>
+        </div>
+        <div class="input-group" style="margin-top: 1.5rem;">
+            <label class="input-label" for="narrationToggle"><i class="bi bi-gear-fill"></i> Settings</label>
+            <button class="btn btn-primary btn-full" id="narrationToggle"><i class="bi bi-volume-up-fill"></i><span>Narration Enabled</span></button>
+        </div>
+        <div id="statusMessages"></div>
+    </aside>
+
+    <main id="overviewContainer">
+        <div class="empty-state" id="emptyState">
+            <div class="icon"><i class="bi bi-diagram-3-fill"></i></div>
+            <h2>Interactive Mechanism Explorer</h2>
+            <p>Transform mechanisms into beautiful, animated reports that you can explore.</p>
+        </div>
+    </main>
+
+    <script>
+        // ========= GLOBAL STATE =========
+        let mechanismData = null;
+        let stepAnimations = [];
+        let narrationEnabled = true;
+        let availableVoices = [];
+
+        // ========= EXAMPLE DATA (WITH MULTILINGUAL NARRATION) =========
+        const examples = {
+            "Comprehensive Demo": {
+                name: "🔬 Multi-Step Synthesis",
+                desc: "Radical and SN2 steps with multilingual narration.",
+                featured: true,
+                json: `{
+  "meta": {
+    "reactionName": "Fischer Esterification: Acetic Acid + Ethanol"
+  },
+  "molecules": {
+    "aceticAcid": {
+      "position": { "x": -250, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "c2", "element": "C", "position": { "x": -60, "y": 0 } },
+        { "id": "o1", "element": "O", "position": { "x": 40, "y": 50 } },
+        { "id": "o2", "element": "O", "position": { "x": 40, "y": -50 } },
+        { "id": "h1", "element": "H", "position": { "x": 70, "y": -70 } }
+      ],
+      "bonds": [
+        { "id": "c1_c2", "from": "c1", "to": "c2" },
+        { "id": "c1_o1", "from": "c1", "to": "o1", "type": "double" },
+        { "id": "c1_o2", "from": "c1", "to": "o2" },
+        { "id": "o2_h1", "from": "o2", "to": "h1" }
+      ]
+    },
+    "hydronium": {
+      "position": { "x": 200, "y": 0 },
+      "atoms": [
+        { "id": "o1", "element": "O", "position": { "x": 0, "y": 0 }, "charge": 1 },
+        { "id": "h1", "element": "H", "position": { "x": 40, "y": 0 } },
+        { "id": "h2", "element": "H", "position": { "x": -20, "y": 35 } },
+        { "id": "h3", "element": "H", "position": { "x": -20, "y": -35 } }
+      ],
+      "bonds": [
+        { "id": "o1_h1", "from": "o1", "to": "h1" },
+        { "id": "o1_h2", "from": "o1", "to": "h2" },
+        { "id": "o1_h3", "from": "o1", "to": "h3" }
+      ]
+    },
+    "protonatedAceticAcid": {
+      "position": { "x": 0, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "c2", "element": "C", "position": { "x": -60, "y": 0 } },
+        { "id": "o1", "element": "O", "position": { "x": 40, "y": 50 }, "charge": 1 },
+        { "id": "h_o1", "element": "H", "position": { "x": 70, "y": 70 } },
+        { "id": "o2", "element": "O", "position": { "x": 40, "y": -50 } },
+        { "id": "h_o2", "element": "H", "position": { "x": 70, "y": -70 } }
+      ],
+      "bonds": [
+        { "id": "c1_c2", "from": "c1", "to": "c2" },
+        { "id": "c1_o1", "from": "c1", "to": "o1" },
+        { "id": "c1_o2", "from": "c1", "to": "o2" },
+        { "id": "o1_h1", "from": "o1", "to": "h_o1" },
+        { "id": "o2_h2", "from": "o2", "to": "h_o2" }
+      ]
+    },
+    "water": {
+      "position": { "x": 300, "y": 100 },
+      "atoms": [
+        { "id": "o1", "element": "O", "position": { "x": 0, "y": 0 } },
+        { "id": "h1", "element": "H", "position": { "x": 40, "y": 0 } },
+        { "id": "h2", "element": "H", "position": { "x": -20, "y": 35 } }
+      ],
+      "bonds": [
+        { "id": "o1_h1", "from": "o1", "to": "h1" },
+        { "id": "o1_h2", "from": "o1", "to": "h2" }
+      ]
+    },
+    "ethanol": {
+      "position": { "x": 250, "y": 0 },
+      "atoms": [
+        { "id": "o1", "element": "O", "position": { "x": 0, "y": 0 } },
+        { "id": "h1", "element": "H", "position": { "x": -30, "y": 20 } },
+        { "id": "c1", "element": "C", "position": { "x": 45, "y": -20 } },
+        { "id": "c2", "element": "C", "position": { "x": 90, "y": 10 } }
+      ],
+      "bonds": [
+        { "id": "o1_h1", "from": "o1", "to": "h1" },
+        { "id": "o1_c1", "from": "o1", "to": "c1" },
+        { "id": "c1_c2", "from": "c1", "to": "c2" }
+      ]
+    },
+    "tetrahedralIntermediate1": {
+      "position": { "x": 0, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "c2", "element": "C", "position": { "x": -60, "y": 20 } },
+        { "id": "oh1", "element": "O", "position": { "x": 20, "y": 60 } },
+        { "id": "h_oh1", "element": "H", "position": { "x": 50, "y": 80 } },
+        { "id": "oh2", "element": "O", "position": { "x": 40, "y": -50 } },
+        { "id": "h_oh2", "element": "H", "position": { "x": 70, "y": -70 } },
+        { "id": "o_et", "element": "O", "position": { "x": -30, "y": -60 }, "charge": 1 },
+        { "id": "h_o_et", "element": "H", "position": { "x": -60, "y": -80 } },
+        { "id": "c_et", "element": "C", "position": { "x": 0, "y": -90 } }
+      ],
+      "bonds": [
+        { "id": "c1_c2", "from": "c1", "to": "c2" },
+        { "id": "c1_oh1", "from": "c1", "to": "oh1" },
+        { "id": "c1_oh2", "from": "c1", "to": "oh2" },
+        { "id": "c1_oet", "from": "c1", "to": "o_et" },
+        { "id": "oh1_h", "from": "oh1", "to": "h_oh1" },
+        { "id": "oh2_h", "from": "oh2", "to": "h_oh2" },
+        { "id": "oet_h", "from": "o_et", "to": "h_o_et" },
+        { "id": "oet_c", "from": "o_et", "to": "c_et" }
+      ]
+    },
+    "tetrahedralIntermediate2": {
+      "position": { "x": 0, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "c2", "element": "C", "position": { "x": -60, "y": 20 } },
+        { "id": "oh1", "element": "O", "position": { "x": 20, "y": 60 } },
+        { "id": "h_oh1", "element": "H", "position": { "x": 50, "y": 80 } },
+        { "id": "oh2", "element": "O", "position": { "x": 40, "y": -50 }, "charge": 1 },
+        { "id": "h1_oh2", "element": "H", "position": { "x": 70, "y": -70 } },
+        { "id": "h2_oh2", "element": "H", "position": { "x": 20, "y": -80 } },
+        { "id": "o_et", "element": "O", "position": { "x": -30, "y": -60 } },
+        { "id": "c_et", "element": "C", "position": { "x": 0, "y": -90 } }
+      ],
+      "bonds": [
+        { "id": "c1_c2", "from": "c1", "to": "c2" },
+        { "id": "c1_oh1", "from": "c1", "to": "oh1" },
+        { "id": "c1_oh2", "from": "c1", "to": "oh2" },
+        { "id": "c1_oet", "from": "c1", "to": "o_et" },
+        { "id": "oh1_h", "from": "oh1", "to": "h_oh1" },
+        { "id": "oh2_h1", "from": "oh2", "to": "h1_oh2" },
+        { "id": "oh2_h2", "from": "oh2", "to": "h2_oh2" },
+        { "id": "oet_c", "from": "o_et", "to": "c_et" }
+      ]
+    },
+    "protonatedEster": {
+      "position": { "x": -250, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "c2", "element": "C", "position": { "x": -60, "y": 0 } },
+        { "id": "o1", "element": "O", "position": { "x": 40, "y": 50 }, "charge": 1 },
+        { "id": "h_o1", "element": "H", "position": { "x": 70, "y": 70 } },
+        { "id": "o_et", "element": "O", "position": { "x": 40, "y": -50 } },
+        { "id": "c_et", "element": "C", "position": { "x": 80, "y": -70 } }
+      ],
+      "bonds": [
+        { "id": "c1_c2", "from": "c1", "to": "c2" },
+        { "id": "c1_o1", "from": "c1", "to": "o1" },
+        { "id": "o1_h", "from": "o1", "to": "h_o1" },
+        { "id": "c1_oet", "from": "c1", "to": "o_et" },
+        { "id": "oet_cet", "from": "o_et", "to": "c_et" }
+      ]
+    },
+    "ethylAcetate": {
+      "position": { "x": 0, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "c2", "element": "C", "position": { "x": -60, "y": 0 } },
+        { "id": "o1", "element": "O", "position": { "x": 40, "y": 50 } },
+        { "id": "o_et", "element": "O", "position": { "x": 40, "y": -50 } },
+        { "id": "c_et", "element": "C", "position": { "x": 80, "y": -70 } }
+      ],
+      "bonds": [
+        { "id": "c1_c2", "from": "c1", "to": "c2" },
+        { "id": "c1_o1", "from": "c1", "to": "o1", "type": "double" },
+        { "id": "c1_oet", "from": "c1", "to": "o_et" },
+        { "id": "oet_cet", "from": "o_et", "to": "c_et" }
+      ]
+    }
+  },
+  "mechanism": [
+    {
+      "step": 1,
+      "title": "Protonation of the Carbonyl Oxygen",
+      "narration": {
+        "en": "The first step is the protonation of the carbonyl oxygen of acetic acid by the acid catalyst, hydronium. This makes the carbonyl carbon much more electrophilic and susceptible to attack."
+      },
+      "description": "The carbonyl oxygen is protonated, activating the carboxylic acid.",
+      "displayMolecules": ["aceticAcid", "hydronium"],
+      "animationHints": [
+        { "type": "curlyArrow", "fromBond": "aceticAcid:c1_o1", "to": "hydronium:h1" },
+        { "type": "curlyArrow", "fromBond": "hydronium:o1_h1", "to": "hydronium:o1" }
+      ]
+    },
+    {
+      "step": 2,
+      "title": "Nucleophilic Attack by Ethanol",
+      "narration": {
+        "en": "The oxygen atom of ethanol, acting as a nucleophile, attacks the now highly electrophilic carbonyl carbon. This forms a tetrahedral intermediate."
+      },
+      "description": "Ethanol attacks the activated carbonyl carbon.",
+      "displayMolecules": ["protonatedAceticAcid", "ethanol", "water"],
+      "animationHints": [
+        { "type": "curlyArrow", "from": "ethanol:o1", "to": "protonatedAceticAcid:c1" },
+        { "type": "curlyArrow", "fromBond": "protonatedAceticAcid:c1_o1", "to": "protonatedAceticAcid:o1" }
+      ]
+    },
+    {
+      "step": 3,
+      "title": "Proton Transfer (Deprotonation)",
+      "narration": {
+        "en": "A water molecule, formed in the first step, acts as a base to deprotonate the oxonium ion. This neutralizes the charge on the oxygen that came from ethanol."
+      },
+      "description": "The attached ethanol group is deprotonated by water.",
+      "displayMolecules": ["tetrahedralIntermediate1", "water"],
+      "animationHints": [
+        { "type": "curlyArrow", "from": "water:o1", "to": "tetrahedralIntermediate1:h_o_et" },
+        { "type": "curlyArrow", "fromBond": "tetrahedralIntermediate1:oet_h", "to": "tetrahedralIntermediate1:o_et" }
+      ]
+    },
+    {
+      "step": 4,
+      "title": "Proton Transfer (Protonation)",
+      "narration": {
+        "en": "To make one of the hydroxyl groups a good leaving group, it is protonated by the hydronium ion that was regenerated. This converts the hydroxyl group into a water molecule, which can easily leave."
+      },
+      "description": "One of the hydroxyl groups is protonated to form a good leaving group.",
+      "displayMolecules": ["tetrahedralIntermediate1", "hydronium"],
+      "animationHints": [
+        { "type": "curlyArrow", "from": "tetrahedralIntermediate1:oh2", "to": "hydronium:h1" },
+        { "type": "curlyArrow", "fromBond": "hydronium:o1_h1", "to": "hydronium:o1" }
+      ]
+    },
+    {
+      "step": 5,
+      "title": "Elimination of Water",
+      "narration": {
+        "en": "The tetrahedral intermediate collapses. The lone pair on one of the oxygen atoms reforms the carbonyl double bond, simultaneously expelling the water molecule as a leaving group."
+      },
+      "description": "The intermediate collapses, reforming the carbonyl and eliminating water.",
+      "displayMolecules": ["tetrahedralIntermediate2"],
+      "animationHints": [
+        { "type": "curlyArrow", "from": "tetrahedralIntermediate2:oh1", "toBond": "tetrahedralIntermediate2:c1_oh1" },
+        { "type": "curlyArrow", "fromBond": "tetrahedralIntermediate2:c1_oh2", "to": "tetrahedralIntermediate2:oh2" }
+      ]
+    },
+    {
+      "step": 6,
+      "title": "Deprotonation to Form the Ester",
+      "narration": {
+        "en": "Finally, a water molecule removes the proton from the carbonyl oxygen, regenerating the acid catalyst and forming the final ethyl acetate ester product."
+      },
+      "description": "The final product, ethyl acetate, is formed and the catalyst is regenerated.",
+      "displayMolecules": ["protonatedEster", "water"],
+      "animationHints": [
+        { "type": "curlyArrow", "from": "water:o1", "to": "protonatedEster:h_o1" },
+        { "type": "curlyArrow", "fromBond": "protonatedEster:o1_h", "to": "protonatedEster:o1" }
+      ]
+    },
+    {
+      "step": 7,
+      "title": "Final Products",
+      "narration": {
+        "en": "The overall reaction has produced ethyl acetate and water, with the hydronium ion acting as a catalyst."
+      },
+      "description": "The esterification is complete.",
+      "displayMolecules": ["ethylAcetate", "water", "hydronium"]
+    }
+  ]
+}`
+            }
+        };
+
+        const ATOM_COLORS = {
+            C: "#404040",
+            H: "#ffffff",
+            O: "#ef4444",
+            N: "#3b82f6",
+            Br: "#a16207",
+            Cl: "#16a34a",
+            F: "#22c55e",
+            S: "#f59e0b",
+            Al: "#a8a29e",
+            R: "#9ca3af"
+        };
+
+        // ========= DOM & EVENT SETUP =========
+        const $ = (id) => document.getElementById(id);
+
+        function setupEventListeners() {
+            $("sidebarToggle").onclick = () => $("sidebar").classList.toggle("open");
+            $("pasteBtn").onclick = async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    $("jsonInput").value = text;
+                    showMessage("Pasted from clipboard", "success");
+                } catch {
+                    showMessage("Clipboard access denied", "warning");
+                }
+            };
+            $("clearBtn").onclick = clearAll;
+            $("visualizeBtn").onclick = visualizeJSON;
+            $("narrationToggle").onclick = toggleNarration;
+
+            const examplesGrid = $("examplesGrid");
+            examplesGrid.innerHTML = '';
+            for (const key in examples) {
+                const ex = examples[key];
+                const card = document.createElement('div');
+                card.className = `example-card ${ex.featured ? 'featured' : ''}`;
+                card.innerHTML = `<h4>${ex.name}</h4><p>${ex.desc}</p>`;
+                card.onclick = () => {
+                    $("jsonInput").value = ex.json;
+                    showMessage(`Loaded "${ex.name}" example`, "info");
+                    if (!$("sidebar").classList.contains("open")) $("sidebar").classList.add("open");
+                };
+                examplesGrid.appendChild(card);
+            }
+
+            // Load speech synthesis voices
+            loadVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+        }
+
+        // ========= CORE LOGIC =========
+        function visualizeJSON() {
+            const raw = $("jsonInput").value.trim();
+            if (!raw) return showMessage("Please provide mechanism JSON", "danger");
+            const findJSON = (text) => {
+                const m = text.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*})/);
+                if (!m) return null;
+                try {
+                    return JSON.parse(m[1] || m[2]);
+                } catch {
+                    return null;
+                }
+            };
+            const parsed = findJSON(raw);
+            if (!parsed) return showMessage("No valid JSON found", "danger");
+            const validate = (d) => {
+                if (!d || !d.meta || !d.mechanism || !d.molecules) throw new Error("JSON incomplete");
+                if (!Array.isArray(d.mechanism) || d.mechanism.length === 0) throw new Error("Mechanism is empty");
+            };
+            try {
+                validate(parsed);
+            } catch (e) {
+                return showMessage(e.message, "danger");
+            }
+
+            mechanismData = parsed;
+            renderOverview();
+            showMessage(`Generated overview with ${mechanismData.mechanism.length} steps`, "success");
+            if ($("sidebar").classList.contains("open")) $("sidebar").classList.remove("open");
+        }
+
+        function clearAll() {
+            stepAnimations.forEach(instance => instance.remove());
+            stepAnimations = [];
+            $("overviewContainer").innerHTML = `<div class="empty-state" id="emptyState"><div class="icon"><i class="bi bi-diagram-3-fill"></i></div><h2>Interactive Mechanism Explorer</h2><p>Transform mechanisms into reports that you can explore.</p></div>`;
+            mechanismData = null;
+            showMessage("Workspace cleared", "info");
+        }
+
+        function renderOverview() {
+            stepAnimations.forEach(instance => instance.remove());
+            stepAnimations = [];
+            const container = $("overviewContainer");
+            container.innerHTML = "";
+
+            const globalBounds = calculateGlobalBounds(mechanismData);
+
+            mechanismData.mechanism.forEach((step, index) => {
+                const stepElement = createStepElement(step, index);
+                container.appendChild(stepElement);
+
+                const animation = new p5(createStepAnimation(step, globalBounds), `canvas-box-${index}`);
+                stepAnimations.push(animation);
+
+                $(`narrate-btn-${index}`).onclick = () => playNarration(index);
+
+                if (index < mechanismData.mechanism.length - 1) {
+                    const divider = document.createElement("div");
+                    divider.className = "step-divider";
+                    divider.innerHTML = "↓";
+                    container.appendChild(divider);
+                }
+            });
+        }
+
+        function createStepElement(step, index) {
+            const stepContainer = document.createElement("div");
+            stepContainer.className = "step-container";
+            const badges = computeStepBadges(step);
+            const badgeHTML = badges.map(b => `<span class="badge glass"><i class="bi ${b.icon}"></i> ${b.text}</span>`).join('');
+            const hints = buildLearningHints(step, mechanismData);
+            const hintsHTML = hints.map(h => `<div class="hint-row"><i class="bi ${h.icon}"></i> ${h.text}</div>`).join('');
+
+            stepContainer.innerHTML = `
+                <h3>Step ${step.step || index + 1}: ${step.title || "Untitled"}</h3>
+                <p>${step.description || "No description provided."}</p>
+                <div class="badge-row">${badgeHTML}</div>
+                <div class="canvas-box" id="canvas-box-${index}">
+                     <div class="canvas-controls">
+                        <button class="btn btn-icon glass" id="narrate-btn-${index}" title="Narrate Step"><i class="bi bi-volume-up-fill"></i></button>
+                        <button class="btn btn-icon glass" id="reset-view-${index}" title="Reset View"><i class="bi bi-arrow-counterclockwise"></i></button>
+                    </div>
+                </div>
+                <details class="learning-hints" open>
+                    <summary><i class="bi bi-mortarboard-fill"></i> Step Analysis</summary>
+                    <div class="learning-body">${hintsHTML}</div>
+                </details>`;
+            return stepContainer;
+        }
+
+        // ========= ANIMATION & DRAWING =========
+        function createStepAnimation(step, globalBounds) {
+            return (p) => {
+                let scaleFactor, panX, panY, initialScale, initialPanX, initialPanY;
+                let isDragging = false,
+                    lastMouseX = 0,
+                    lastMouseY = 0;
+
+                p.setup = () => {
+                    const parent = p.canvas.parentElement;
+                    p.createCanvas(parent.clientWidth, parent.clientHeight);
+                    p.textFont("Inter");
+
+                    const padding = 1.5;
+                    initialScale = Math.min(p.width / (globalBounds.width * padding), p.height / (globalBounds.height * padding));
+                    initialPanX = p.width / 2 - globalBounds.centerX * initialScale;
+                    initialPanY = p.height / 2 - globalBounds.centerY * initialScale;
+
+                    p.resetView = () => {
+                        scaleFactor = initialScale;
+                        panX = initialPanX;
+                        panY = initialPanY;
+                    };
+                    p.resetView();
+                    parent.querySelector(`#reset-view-${step.step - 1 || 0}`).onclick = p.resetView;
+                };
+
+                p.mousePressed = () => {
+                    if (p.mouseX > 0 && p.mouseX < p.width && p.mouseY > 0 && p.mouseY < p.height) {
+                        isDragging = true;
+                        lastMouseX = p.mouseX;
+                        lastMouseY = p.mouseY;
+                    }
+                };
+                p.mouseReleased = () => isDragging = false;
+                p.mouseDragged = () => {
+                    if (isDragging) {
+                        panX += p.mouseX - lastMouseX;
+                        panY += p.mouseY - lastMouseY;
+                        lastMouseX = p.mouseX;
+                        lastMouseY = p.mouseY;
+                    }
+                };
+                p.mouseWheel = (event) => {
+                    if (p.mouseX > 0 && p.mouseX < p.width && p.mouseY > 0 && p.mouseY < p.height) {
+                        event.preventDefault();
+                        const s = scaleFactor * (1 - event.delta * 0.001);
+                        if (s > 0.1 && s < 20) {
+                            const wx = (p.mouseX - panX) / scaleFactor,
+                                wy = (p.mouseY - panY) / scaleFactor;
+                            panX = p.mouseX - wx * s;
+                            panY = p.mouseY - wy * s;
+                            scaleFactor = s;
+                        }
+                    }
+                };
+
+                p.draw = () => {
+                    p.background(6, 8, 20);
+                    const tempMolecules = JSON.parse(JSON.stringify(mechanismData.molecules));
+
+                    p.push();
+                    p.translate(panX, panY);
+                    p.scale(scaleFactor);
+                    drawMolecules(p, step.displayMolecules, tempMolecules);
+
+                    const animationProgress = (p.millis() % 3000) / 3000.0; // 3-second loop
+                    drawAnimationHints(p, step, tempMolecules, animationProgress);
+                    p.pop();
+                };
+            };
+        }
+
+        function drawAnimationHints(p, step, allMolecules, progress) {
+            if (!step.animationHints) return;
+            const findPoint = (id) => {
+                if (!id) return null;
+                const [molKey, atomId] = id.split(':');
+                const mol = allMolecules[molKey];
+                if (!mol) return null;
+                const atom = mol.atoms.find(a => a.id === atomId);
+                if (!atom) return null;
+                return {
+                    x: atom.position.x + (mol.position?.x || 0),
+                    y: atom.position.y + (mol.position?.y || 0)
+                };
+            };
+            const findBondMidpoint = (id) => {
+                if (!id) return null;
+                const [molKey, bondId] = id.split(':');
+                const mol = allMolecules[molKey];
+                if (!mol) return null;
+                const bond = mol.bonds.find(b => b.id === bondId);
+                if (!bond) return null;
+                const a1 = findPoint(`${molKey}:${bond.from}`);
+                const a2 = findPoint(`${molKey}:${bond.to}`);
+                if (!a1 || !a2) return null;
+                return {
+                    x: (a1.x + a2.x) / 2,
+                    y: (a1.y + a2.y) / 2
+                };
+            };
+
+            for (const hint of step.animationHints) {
+                const toPoint = findPoint(hint.to);
+                const fromPoint = hint.from ? findPoint(hint.from) : findBondMidpoint(hint.fromBond);
+                if (!fromPoint || !toPoint) continue;
+
+                const d = p.dist(fromPoint.x, fromPoint.y, toPoint.x, toPoint.y);
+                const angle = p.atan2(toPoint.y - fromPoint.y, toPoint.x - fromPoint.x);
+                const ctrlOffset = d * 0.4;
+                const c1x = fromPoint.x + ctrlOffset * p.cos(angle + p.HALF_PI);
+                const c1y = fromPoint.y + ctrlOffset * p.sin(angle + p.HALF_PI);
+                const c2x = toPoint.x + ctrlOffset * p.cos(angle + p.HALF_PI);
+                const c2y = toPoint.y + ctrlOffset * p.sin(angle + p.HALF_PI);
+
+                p.noFill();
+                p.strokeWeight(2.5);
+                p.stroke(p.color(getComputedStyle(document.documentElement).getPropertyValue('--accent')), 100);
+                p.bezier(fromPoint.x, fromPoint.y, c1x, c1y, c2x, c2y, toPoint.x, toPoint.y);
+
+                const t = progress;
+                const x = p.bezierPoint(fromPoint.x, c1x, c2x, toPoint.x, t);
+                const y = p.bezierPoint(fromPoint.y, c1y, c2y, toPoint.y, t);
+
+                p.push();
+                p.translate(x, y);
+                const tx = p.bezierTangent(fromPoint.x, c1x, c2x, toPoint.x, t);
+                const ty = p.bezierTangent(fromPoint.y, c1y, c2y, toPoint.y, t);
+                p.rotate(p.atan2(ty, tx));
+                p.fill(p.color(getComputedStyle(document.documentElement).getPropertyValue('--accent')));
+                p.stroke(p.color(getComputedStyle(document.documentElement).getPropertyValue('--accent')));
+                p.strokeWeight(2);
+                if (hint.type === 'curlyArrow') {
+                    p.line(0, 0, -10, -7);
+                    p.line(0, 0, -10, 7);
+                } else {
+                    p.line(0, 0, -10, hint.flip ? 7 : -7);
+                }
+                p.pop();
+            }
+        }
+
+        // ========= UTILITY & HELPER FUNCTIONS =========
+        function showMessage(message, type = "info") {
+            const c = $("statusMessages");
+            const a = document.createElement("div");
+            a.className = `alert alert-${type}`;
+            a.innerHTML = `<i class="bi bi-${{info:"info-circle-fill",success:"check-circle-fill",danger:"x-circle-fill"}[type]}"></i><span>${message}</span>`;
+            c.prepend(a);
+            setTimeout(() => {
+                a.style.transition = "opacity .5s";
+                a.style.opacity = "0";
+                setTimeout(() => a.remove(), 500)
+            }, 4500);
+        }
+
+        function calculateGlobalBounds(data) {
+            let minX = Infinity,
+                minY = Infinity,
+                maxX = -Infinity,
+                maxY = -Infinity,
+                c = 0;
+            for (const s of data.mechanism)
+                for (const k of s.displayMolecules) {
+                    const m = data.molecules[k];
+                    if (!m || !m.atoms) continue;
+                    const mx = m.position?.x || 0,
+                        my = m.position?.y || 0;
+                    for (const a of m.atoms) {
+                        const x = a.position.x + mx,
+                            y = a.position.y + my;
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
+                        c++;
+                    }
+                }
+            if (c === 0) return {
+                centerX: 0,
+                centerY: 0,
+                width: 100,
+                height: 100
+            };
+            return {
+                centerX: (minX + maxX) / 2,
+                centerY: (minY + maxY) / 2,
+                width: Math.max(100, maxX - minX),
+                height: Math.max(100, maxY - minY)
+            };
+        }
+        const computeStepBadges = (step) => {
+            const badges = [];
+            const title = (step.title || "").toLowerCase();
+            if (title.includes("radical")) badges.push({
+                text: "Radical",
+                icon: "bi-lightning-fill"
+            });
+            if (title.includes("sn2")) badges.push({
+                text: "SN2",
+                icon: "bi-arrow-left-right"
+            });
+            if (title.includes("elimination")) badges.push({
+                text: "Elimination",
+                icon: "bi-arrow-up-right"
+            });
+            if ((step.description || "").toLowerCase().includes("inversion")) badges.push({
+                text: "Stereo Inversion",
+                icon: "bi-diagram-2-fill"
+            });
+            if (step.animationHints?.length > 0) badges.push({
+                text: "Animated",
+                icon: "bi-film"
+            });
+            return badges;
+        };
+
+        function drawMolecules(p, molKeys, allMolecules) {
+            for (const key of molKeys) {
+                const mol = allMolecules[key];
+                if (!mol) continue;
+                p.push();
+                p.translate(mol.position?.x || 0, mol.position?.y || 0);
+                if (mol.bonds) drawBonds(p, mol);
+                if (mol.atoms) drawAtoms(p, mol);
+                p.pop();
+            }
+        }
+
+        function drawBonds(p, molecule) {
+            for (const bond of molecule.bonds) {
+                const a1 = molecule.atoms.find(a => a.id === bond.from);
+                const a2 = molecule.atoms.find(a => a.id === bond.to);
+                if (!a1 || !a2) continue;
+                p.stroke(255, 150);
+                p.strokeWeight(4);
+                const [x1, y1, x2, y2] = [a1.position.x, a1.position.y, a2.position.x, a2.position.y];
+                switch (bond.type) {
+                    case "double": {
+                        const o = 5,
+                            a = p.atan2(y2 - y1, x2 - x1) + p.HALF_PI,
+                            dx = o * p.cos(a),
+                            dy = o * p.sin(a);
+                        p.line(x1 + dx, y1 + dy, x2 + dx, y2 + dy);
+                        p.line(x1 - dx, y1 - dy, x2 - dx, y2 - dy);
+                        break;
+                    }
+                    case "wedge": {
+                        p.fill(255, 150);
+                        p.noStroke();
+                        const a = p.atan2(y2 - y1, x2 - x1) + p.HALF_PI;
+                        p.triangle(x1, y1, x2 + 8 * p.cos(a), y2 + 8 * p.sin(a), x2 - 8 * p.cos(a), y2 - 8 * p.sin(a));
+                        break;
+                    }
+                    case "dash": {
+                        p.drawingContext.setLineDash([6, 8]);
+                        p.line(x1, y1, x2, y2);
+                        p.drawingContext.setLineDash([]);
+                        break;
+                    }
+                    default:
+                        p.line(x1, y1, x2, y2);
+                }
+            }
+        }
+
+        function drawAtoms(p, molecule) {
+            for (const atom of molecule.atoms) {
+                const color = ATOM_COLORS[atom.element] || "#94a3b8";
+                const size = atom.element === "H" ? 12 : 16;
+                p.fill(color);
+                p.stroke(255, 120);
+                p.strokeWeight(2);
+                p.ellipse(atom.position.x, atom.position.y, size * 2);
+                if (atom.element !== "C" || molecule.atoms.length < 2) {
+                    p.fill(atom.element === "H" ? "#000" : "#fff");
+                    p.noStroke();
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.textSize(size * 0.9);
+                    p.textStyle(p.BOLD);
+                    p.text(atom.element, atom.position.x, atom.position.y + 1);
+                }
+                if (atom.charge) {
+                    p.fill(atom.charge > 0 ? "#ef4444" : "#3b82f6");
+                    p.noStroke();
+                    p.textSize(size * 0.85);
+                    const cs = (atom.charge > 0 ? "+" : "−") + (Math.abs(atom.charge) > 1 ? Math.abs(atom.charge) : "");
+                    p.text(cs, atom.position.x + size * 0.9, atom.position.y - size * 0.9);
+                }
+                if (atom.radical) {
+                    p.fill("#ef4444");
+                    p.noStroke();
+                    p.circle(atom.position.x + size * 0.9, atom.position.y - size * 0.9, size * 0.35);
+                }
+            }
+        }
+
+        // ========= NARRATION & HINTS LOGIC =========
+        function loadVoices() {
+            availableVoices = speechSynthesis.getVoices();
+        }
+
+        function findVoice(langCode) {
+            return availableVoices.find(voice => voice.lang === langCode) || availableVoices.find(voice => voice.lang.startsWith(langCode.split('-')[0])) || null;
+        }
+
+        function toggleNarration() {
+            narrationEnabled = !narrationEnabled;
+            const btn = $("narrationToggle");
+            if (narrationEnabled) {
+                btn.innerHTML = `<i class="bi bi-volume-up-fill"></i><span>Narration Enabled</span>`;
+                btn.classList.add('btn-primary');
+                showMessage("Narration enabled.", "success");
+            } else {
+                speechSynthesis.cancel();
+                btn.innerHTML = `<i class="bi bi-volume-mute-fill"></i><span>Narration Disabled</span>`;
+                btn.classList.remove('btn-primary');
+                showMessage("Narration disabled.", "info");
+            }
+        }
+
+        function playNarration(index) {
+            if (!narrationEnabled || !mechanismData) return;
+            const step = mechanismData.mechanism[index];
+            if (!step || !step.narration) return;
+
+            let text, langCode;
+            if (typeof step.narration === 'object') {
+                if (step.narration.bn) {
+                    text = step.narration.bn;
+                    langCode = 'bn-IN';
+                } else if (step.narration.hi) {
+                    text = step.narration.hi;
+                    langCode = 'hi-IN';
+                } else if (step.narration.en) {
+                    text = step.narration.en;
+                    langCode = 'en-US';
+                }
+            } else {
+                text = step.narration;
+                langCode = 'en-US';
+            }
+
+            if (text) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = langCode;
+                utterance.voice = findVoice(langCode);
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function buildLearningHints(step, data) {
+            const hints = [];
+            const parseId = (id) => {
+                if (!id) return null;
+                const [molKey, atomId] = id.split(":");
+                const mol = data.molecules[molKey];
+                if (!mol) return null;
+                const atom = mol.atoms.find(a => a.id === atomId);
+                return {
+                    molKey,
+                    mol,
+                    atom
+                };
+            };
+
+            if (step.animationHints) {
+                step.animationHints.forEach(hint => {
+                    if (hint.type === 'curlyArrow' && hint.from && hint.to) {
+                        const from = parseId(hint.from);
+                        const to = parseId(hint.to);
+                        if (from && to) {
+                            hints.push({
+                                icon: "bi-lightning-charge",
+                                text: `<strong>Nucleophilic Attack:</strong> The electron-rich <strong>${from.atom.element}</strong> atom on the <strong>${from.molKey}</strong> molecule acts as the nucleophile.`
+                            });
+                            hints.push({
+                                icon: "bi-bullseye",
+                                text: `<strong>Electrophilic Center:</strong> It attacks the electron-deficient <strong>${to.atom.element}</strong> atom on the <strong>${to.molKey}</strong> molecule.`
+                            });
+                        }
+                    }
+                    if (hint.type === 'curlyArrow' && hint.fromBond && hint.to) {
+                        const to = parseId(hint.to);
+                        hints.push({
+                            icon: "bi-link-45deg",
+                            text: `<strong>Bond Cleavage:</strong> The electron pair from the breaking bond moves onto the <strong>${to.atom.element}</strong> atom, which acts as the leaving group.`
+                        });
+                    }
+                    if (hint.type === 'fishhookArrow') {
+                        hints.push({
+                            icon: "bi-lightning-fill",
+                            text: `<strong>Homolytic Cleavage:</strong> A single electron (indicated by a fishhook arrow) moves to each atom from the breaking bond, forming two radicals.`
+                        });
+                    }
+                });
+            }
+            if (hints.length === 0) {
+                hints.push({
+                    icon: "bi-info-circle",
+                    text: "This step shows the final products or stable intermediates resulting from the previous reaction step."
+                });
+            }
+            return hints;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', setupEventListeners);
+    </script>
+</body>
+
+</html>
