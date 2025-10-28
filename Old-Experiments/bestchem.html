@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Chemistry Mechanism Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --primary-dark: #2563eb;
+            --accent-green: #22c55e;
+            --info-purple: #8b5cf6;
+            --bg-darker: #020617;
+            --text-light: #f1f5f9;
+            --text-gray: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: rgba(0, 0, 0, 0.2);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --app-height: 100vh;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-darker);
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--glass-shadow);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 320px;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            padding: 4rem 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-toggle-btn {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .visualization-panel {
+            width: 100vw;
+            height: var(--app-height);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visualization-container {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .visualization-container:active {
+            cursor: grabbing;
+        }
+
+        .bottom-controls-container {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            padding: 0.5rem;
+            border-radius: 12px;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            width: auto;
+            max-width: 90vw;
+        }
+
+        .control-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        #playPauseBtn {
+            background: var(--primary-blue);
+        }
+
+        .input-group {
+            margin-bottom: 0.8rem;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.6rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            color: var(--text-light);
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        textarea.input-field {
+            min-height: 100px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .json-input-group {
+            position: relative;
+        }
+
+        .json-button-group {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .json-button-group .btn {
+            width: 32px;
+            height: 32px;
+            font-size: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-light);
+            background: transparent;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green), #15803d);
+        }
+
+        /* NEW BUTTON STYLE */
+        .btn-info {
+            background: linear-gradient(135deg, var(--info-purple), #6d28d9);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        .btn-full {
+            width: 100%;
+            height: 40px;
+            font-size: 1rem;
+            gap: 0.5rem;
+        }
+
+        .two-btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .alert {
+            padding: 0.7rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            font-size: 0.8rem;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        .examples-section {
+            margin-top: 1rem;
+        }
+
+        .examples-section h3 {
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .example-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 0.4rem 0.7rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin: 0.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .example-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .example-btn-special {
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-green));
+            font-weight: 600;
+        }
+
+        #step-info-box {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            z-index: 100;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            color: var(--text-light);
+            text-align: center;
+            display: none;
+        }
+
+        #step-info-box details {
+            text-align: left;
+        }
+
+        #step-info-box summary {
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        #step-info-description {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+
+        #step-info-description strong {
+            color: var(--primary-blue);
+        }
+
+        #mechanism-timeline {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 45;
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            gap: 0.5rem;
+            overflow-x: auto;
+            max-width: 80vw;
+        }
+
+        .step-box {
+            flex-shrink: 0;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-gray);
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .step-box.active {
+            color: var(--text-light);
+            background: var(--primary-blue);
+            border-color: var(--primary-dark);
+            transform: scale(1.1);
+        }
+
+        .step-arrow {
+            color: var(--text-gray);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-gray);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+            color: var(--primary-blue);
+        }
+
+        .performance-info {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 0.7rem;
+            color: var(--text-gray);
+            font-family: 'Courier New', monospace;
+            z-index: 10;
+        }
+
+        .conditions-panel {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            width: 300px;
+            max-height: 80vh;
+            z-index: 200;
+            padding: 1rem;
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 0.8rem;
+            overflow-y: auto;
+        }
+
+        .conditions-panel h3 {
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .condition-item {
+            font-size: 0.85rem;
+        }
+
+        .condition-item strong {
+            color: var(--text-gray);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-darker);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-content h2 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+        }
+
+        .modal-content p {
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        .modal-content pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- UI Elements (Sidebar, Modal, etc.) -->
+    <button class="sidebar-toggle-btn glass" onclick="toggleSidebar()" title="Toggle Controls"><i class="bi bi-list"></i></button>
+    <div class="sidebar glass" id="sidebar">
+        <div class="alert alert-info"><i class="bi bi-info-circle"></i><span><strong>Workflow:</strong> Topic → Prompt → Paste JSON → Visualize</span></div>
+        <div class="input-group"><label class="input-label" for="topicInput"><i class="bi bi-pencil"></i> Chemistry Topic</label><input type="text" id="topicInput" class="input-field glass" placeholder="e.g., SN2 reaction..."></div>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="generatePrompt()" title="Generate AI Prompt"><i class="bi bi-cpu"></i></button>
+            <button class="btn btn-warning" onclick="sendToPerplexity()" title="Send to Perplexity"><i class="bi bi-send"></i></button>
+            <button class="btn" onclick="copyPrompt()" title="Copy Prompt"><i class="bi bi-clipboard"></i></button>
+            <button class="btn" onclick="showHelp()" title="Help & Shortcuts"><i class="bi bi-question-circle"></i></button>
+        </div>
+        <div id="promptOutput" style="display: none;"><textarea id="generatedPrompt" class="input-field glass" readonly></textarea></div>
+        <div class="input-group json-input-group">
+            <label class="input-label" for="jsonInput"><i class="bi bi-code-slash"></i> AI Response (JSON)</label>
+            <textarea id="jsonInput" class="input-field glass" placeholder="Paste AI response here..."></textarea>
+            <div class="json-button-group">
+                <button class="btn" onclick="pasteFromClipboard()" title="Paste from Clipboard"><i class="bi bi-clipboard-plus"></i></button>
+                <button class="btn" onclick="clearAll()" title="Clear All"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+        <div class="two-btn-group">
+            <button class="btn btn-success btn-full" onclick="visualizeJSON()" title="Start Visualization"><i class="bi bi-play-circle"></i> Visualize</button>
+            <button class="btn btn-info btn-full" onclick="exportStaticHTML()" title="Export as Static HTML Page"><i class="bi bi-file-earmark-code"></i> Export</button>
+        </div>
+
+        <div class="examples-section">
+            <h3><i class="bi bi-collection"></i> Examples</h3>
+            <button class="example-btn" onclick="loadExample('SN2')">SN2</button>
+            <button class="example-btn" onclick="loadExample('E2')">E2</button>
+            <button class="example-btn" onclick="loadExample('Friedel-Crafts')">Friedel-Crafts</button>
+            <br>
+            <button class="example-btn example-btn-special" onclick="loadExample('Comprehensive Demo')">Comprehensive Demo</button>
+        </div>
+        <div id="statusMessages"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="visualization-panel">
+        <div class="visualization-container" id="visualizationContainer">
+            <div class="performance-info" id="performanceInfo">FPS: <span id="fpsDisplay">30</span></div>
+            <div class="empty-state" id="emptyState">
+                <div class="icon"><i class="bi bi-diagram-3"></i></div>
+                <h3>Chemistry Visualizer</h3>
+                <p>Use the controls to generate and visualize complex chemical reaction mechanisms.</p>
+            </div>
+        </div>
+        <div class="conditions-panel glass" id="conditionsPanel"></div>
+        <div class="glass" id="step-info-box">
+            <details open>
+                <summary id="step-info-summary">Step Title</summary>
+                <p id="step-info-description">Step description...</p>
+            </details>
+        </div>
+        <div id="mechanism-timeline" style="display: none;"></div>
+        <div class="bottom-controls-container glass" id="bottomControls" style="display: none;">
+            <button class="control-btn" onclick="prevStep()" title="Previous Step (←)"><i class="bi bi-skip-start-fill"></i></button>
+            <button class="control-btn" id="playPauseBtn" onclick="toggleAnimation()" title="Play/Pause (Space)"><i class="bi bi-play-fill"></i></button>
+            <button class="control-btn" onclick="nextStep()" title="Next Step (→)"><i class="bi bi-skip-end-fill"></i></button>
+            <button class="control-btn" id="narrationBtn" onclick="toggleNarration()" title="Toggle Narration (M)"><i class="bi bi-volume-up"></i></button>
+            <button class="control-btn" id="infoBtn" onclick="toggleConditionsPanel()" title="Reaction Info (I)"><i class="bi bi-info-circle-fill"></i></button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="hideHelp()">&times;</button>
+            <h2><i class="bi bi-info-circle"></i> Help & Controls</h2>
+            <p>This tool visualizes chemistry mechanisms from AI-generated JSON data. Follow the workflow in the sidebar to get started.</p>
+            <pre>
+🎮 CONTROLS:
+  Space: Play/Pause
+  ←/→ : Previous/Next Step  
+  F    : Toggle Fullscreen
+  I    : Toggle Info Panel
+  M    : Mute/Unmute
+  Esc  : Close This Panel
+  Mouse Wheel: Zoom
+  Mouse Drag : Pan
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let mechanismData = null,
+            p5Instance = null,
+            currentStep = 0,
+            isPlaying = false,
+            narrationEnabled = true;
+        let molecules = {},
+            stepStartTime = 0,
+            scaleFactor = 1.0,
+            panX = 0,
+            panY = 0;
+        let isDragging = false,
+            lastMouseX = 0,
+            lastMouseY = 0;
+        let fpsCounter = 0,
+            speechEnginePrimed = false;
+
+        // --- AI PROMPT ---
+        const UNIVERSAL_PROMPT = `Generate a comprehensive JSON for visualizing a: [TOPIC_PLACEHOLDER]
+
+// CRITICAL: Return ONLY the raw JSON object. No explanations, no markdown.
+{
+  "meta": { "reactionName": "Complete reaction name", "reactionType": "Mechanism type" },
+  "conditions": {
+    "temperature": { "value": 298, "unit": "K", "effects": "Briefly, how temperature affects this reaction." },
+    "reagents": [ { "name": "Reagent name", "formula": "CH3Cl", "role": "e.g., Nucleophile", "function": "Its specific role." } ],
+    "solvent": { "name": "Solvent name", "polarity": "e.g., polar aprotic", "effects": "How the solvent influences the mechanism." }
+  },
+  "molecules": {
+    "reactantA": {
+      "position": {"x": -200, "y": 0},
+      "atoms": [
+        { "id": "c1", "element": "C", "position": {"x": 0, "y": 0}, "charge": 0, "radical": false },
+        { "id": "o1", "element": "O", "position": {"x": 0, "y": 50}, "charge": -1 }
+      ],
+      "bonds": [ { "id": "c1_o1", "from": "c1", "to": "o1", "type": "double" } ] // type can be "single", "double", "triple", "wedge", "dash"
+    }
+  },
+  "mechanism": [
+    {
+      "step": 1,
+      "title": "Clear, concise step title",
+      "narration": "A simple, 1-2 sentence explanation.",
+      "description": "A slightly more detailed technical description.",
+      "displayMolecules": ["reactantA", "reactantB"],
+      "actions": [
+        { "type": "ELECTRON_ARROW", "from": "reactantA.o1", "to": "reactantB.c1", "duration": 2000, "delay": 0, "controlPoint": {"x": -100, "y": -50} },
+        { "type": "BOND_ANIMATION", "target": "reactantA.c1_o1", "animationType": "breaking", "duration": 1500, "delay": 500 }
+      ]
+    }
+  ],
+  "educational": { "keyPoints": ["A key takeaway for students."], "mechanismType": "concerted/stepwise" }
+}
+`;
+
+        // --- PRE-LOADED EXAMPLES ---
+        const exampleData = {
+            'SN2': `{
+  "meta": {
+    "reactionName": "SN2 Reaction of Bromomethane",
+    "reactionType": "Bimolecular Nucleophilic Substitution"
+  },
+  "conditions": {
+    "reagents": [
+      { "name": "Hydroxide", "formula": "OH-", "role": "Nucleophile" },
+      { "name": "Bromomethane", "formula": "CH3Br", "role": "Electrophile" }
+    ],
+    "solvent": { "name": "Acetone", "polarity": "Polar Aprotic" }
+  },
+  "molecules": {
+    "hydroxide": {
+      "position": { "x": -250, "y": 0 },
+      "atoms": [
+        { "id": "o1", "element": "O", "position": { "x": 0, "y": 0 }, "charge": -1 },
+        { "id": "h1", "element": "H", "position": { "x": 40, "y": 0 } }
+      ],
+      "bonds": [{ "id": "o1_h1", "from": "o1", "to": "h1", "type": "single" }]
+    },
+    "bromomethane": {
+      "position": { "x": 0, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "br1", "element": "Br", "position": { "x": 60, "y": 0 } },
+        { "id": "h1", "element": "H", "position": { "x": -25, "y": 45 } },
+        { "id": "h2", "element": "H", "position": { "x": -35, "y": -35 } },
+        { "id": "h3", "element": "H", "position": { "x": -20, "y": 5 } }
+      ],
+      "bonds": [
+        { "id": "c1_br1", "from": "c1", "to": "br1", "type": "single" },
+        { "id": "c1_h1", "from": "c1", "to": "h1", "type": "wedge" },
+        { "id": "c1_h2", "from": "c1", "to": "h2", "type": "dash" },
+        { "id": "c1_h3", "from": "c1", "to": "h3", "type": "single" }
+      ]
+    },
+    "methanol": {
+      "position": { "x": 250, "y": 0 },
+      "atoms": [
+        { "id": "c1", "element": "C", "position": { "x": 0, "y": 0 } },
+        { "id": "o1", "element": "O", "position": { "x": -60, "y": 0 } },
+        { "id": "h_o", "element": "H", "position": { "x": -90, "y": 20 } },
+        { "id": "h1", "element": "H", "position": { "x": 25, "y": 45 } },
+        { "id": "h2", "element": "H", "position": { "x": 35, "y": -35 } },
+        { "id": "h3", "element": "H", "position": { "x": 20, "y": 5 } }
+      ],
+      "bonds": [
+        { "id": "c1_o1", "from": "c1", "to": "o1", "type": "single" },
+        { "id": "o1_h", "from": "o1", "to": "h_o", "type": "single" },
+        { "id": "c1_h1", "from": "c1", "to": "h1", "type": "dash" },
+        { "id": "c1_h2", "from": "c1", "to": "h2", "type": "wedge" },
+        { "id": "c1_h3", "from": "c1", "to": "h3", "type": "single" }
+      ]
+    },
+    "bromide": {
+      "position": { "x": 450, "y": 0 },
+      "atoms": [{ "id": "br1", "element": "Br", "position": { "x": 0, "y": 0 }, "charge": -1 }]
+    }
+  },
+  "mechanism": [
+    {
+      "step": 1,
+      "title": "Nucleophilic Attack",
+      "narration": "The hydroxide nucleophile attacks the carbon atom, while the carbon-bromine bond breaks simultaneously.",
+      "description": "This is a concerted, one-step mechanism. The nucleophile attacks from the backside, leading to an inversion of stereochemistry at the carbon center.",
+      "displayMolecules": ["hydroxide", "bromomethane"]
+    },
+    {
+      "step": 2,
+      "title": "Formation of Products",
+      "narration": "The reaction yields methanol and a bromide ion.",
+      "description": "Note the inversion of stereochemistry in the methanol product compared to the starting bromomethane. This is a hallmark of the SN2 mechanism.",
+      "displayMolecules": ["methanol", "bromide"]
+    }
+  ]
+}`,
+            'E2': `{}`,
+            'Friedel-Crafts': `{}`,
+            'Comprehensive Demo': `{
+  "meta": {
+    "reactionName": "Multi-Step Organic Synthesis Demo",
+    "reactionType": "Comprehensive Showcase"
+  },
+  "conditions": {
+    "reagents": [
+      { "name": "Bromine", "formula": "Br2", "role": "Radical Source" },
+      { "name": "Butane", "formula": "C4H10", "role": "Substrate" },
+      { "name": "Hydroxide", "formula": "OH-", "role": "Nucleophile" },
+      { "name": "Benzene", "formula": "C6H6", "role": "Aromatic Substrate" },
+      { "name": "Ketone", "formula": "R-CO-CH3", "role": "Enolate Precursor" }
+    ],
+    "solvent": { "name": "Various", "polarity": "Varies by step", "effects": "Solvent choice is critical for each step's success." }
+  },
+  "molecules": {
+    "br2": {
+      "name": "Bromine",
+      "position": {"x": -200, "y": -150},
+      "atoms": [
+        {"id": "br1", "element": "Br", "position": {"x": -30, "y": 0}},
+        {"id": "br2", "element": "Br", "position": {"x": 30, "y": 0}}
+      ],
+      "bonds": [{"id": "br1_br2", "from": "br1", "to": "br2", "type": "single"}]
+    },
+    "br_rad": {
+        "name": "Bromine Radical",
+        "position": {"x": 200, "y": -150},
+        "atoms": [{"id": "br1", "element": "Br", "position": {"x": 0, "y": 0}, "radical": true}]
+    },
+    "chiral_bromide": {
+      "name": "2-Bromobutane",
+      "position": {"x": -200, "y": 0},
+      "atoms": [
+        {"id": "c1", "element": "C", "position": {"x": 0, "y": 0}},
+        {"id": "br1", "element": "Br", "position": {"x": 0, "y": 60}},
+        {"id": "h2", "element": "H", "position": {"x": -52, "y": -30}},
+        {"id": "me1", "element": "C", "position": {"x": 52, "y": -30}}
+      ],
+      "bonds": [
+        {"id": "c1_br1", "from": "c1", "to": "br1", "type": "single"},
+        {"id": "c1_h2", "from": "c1", "to": "h2", "type": "dash"},
+        {"id": "c1_me1", "from": "c1", "to": "me1", "type": "wedge"}
+      ]
+    },
+    "hydroxide": {
+      "name": "Hydroxide",
+      "position": {"x": -250, "y": 0},
+      "atoms": [{"id": "o1", "element": "O", "position": {"x": 0, "y": 0}, "charge": -1}, {"id": "h1", "element": "H", "position": {"x": 30, "y": -20}}],
+      "bonds": [{"id": "o1_h1", "from": "o1", "to": "h1", "type": "single"}]
+    },
+    "inverted_alcohol": {
+      "name": "2-Butanol (Inverted)",
+      "position": {"x": 250, "y": 0},
+       "atoms": [
+        {"id": "c1", "element": "C", "position": {"x": 0, "y": 0}},
+        {"id": "o1", "element": "O", "position": {"x": 0, "y": 60}},
+        {"id": "h_o", "element": "H", "position": {"x": 30, "y": 80}},
+        {"id": "h2", "element": "H", "position": {"x": 52, "y": -30}},
+        {"id": "me1", "element": "C", "position": {"x": -52, "y": -30}}
+      ],
+      "bonds": [
+        {"id": "c1_o1", "from": "c1", "to": "o1", "type": "single"},
+        {"id": "o1_h", "from": "o1", "to": "h_o", "type": "single"},
+        {"id": "c1_h2", "from": "c1", "to": "h2", "type": "wedge"},
+        {"id": "c1_me1", "from": "c1", "to": "me1", "type": "dash"}
+      ]
+    },
+     "benzene": {
+      "name": "Benzene",
+      "position": {"x": -200, "y": 150},
+      "atoms": [
+        {"id": "c1", "element": "C", "position": {"x": 0, "y": -50}},
+        {"id": "c2", "element": "C", "position": {"x": 43, "y": -25}},
+        {"id": "c3", "element": "C", "position": {"x": 43, "y": 25}},
+        {"id": "c4", "element": "C", "position": {"x": 0, "y": 50}},
+        {"id": "c5", "element": "C", "position": {"x": -43, "y": 25}},
+        {"id": "c6", "element": "C", "position": {"x": -43, "y": -25}}
+      ],
+      "bonds": [
+        {"id": "b1", "from": "c1", "to": "c2", "type": "double"},
+        {"id": "b2", "from": "c2", "to": "c3", "type": "single"},
+        {"id": "b3", "from": "c3", "to": "c4", "type": "double"},
+        {"id": "b4", "from": "c4", "to": "c5", "type": "single"},
+        {"id": "b5", "from": "c5", "to": "c6", "type": "double"},
+        {"id": "b6", "from": "c6", "to": "c1", "type": "single"}
+      ]
+    },
+    "electrophile": {
+        "name": "Electrophile",
+        "position": {"x": 0, "y": 150},
+        "atoms": [{"id": "r", "element": "R", "position": {"x": 0, "y": 0}, "charge": 1}]
+    },
+    "substituted_benzene": {
+      "name": "Substituted Benzene",
+      "position": {"x": 200, "y": 150},
+      "atoms": [
+        {"id": "c1", "element": "C", "position": {"x": 0, "y": -50}},
+        {"id": "r", "element": "R", "position": {"x": 0, "y": -90}}
+      ],
+      "bonds": [{"id": "b7", "from": "c1", "to": "r", "type": "single"}]
+    }
+  },
+  "mechanism": [
+    {
+      "step": 1,
+      "title": "Radical Initiation",
+      "narration": "UV light cleaves the bromine-bromine bond, forming two bromine radicals.",
+      "description": "This is a homolytic cleavage, where each atom receives one electron from the bond. This initiation step requires energy, typically from UV light (hν).",
+      "displayMolecules": ["br2"]
+    },
+    {
+      "step": 2,
+      "title": "SN2 Nucleophilic Substitution",
+      "narration": "A hydroxide ion performs a backside attack on the chiral alkyl bromide.",
+      "description": "This is a concerted SN2 reaction. The nucleophile (OH-) attacks the carbon center at 180° to the leaving group (Br), causing an inversion of stereochemistry. <strong>TIP:</strong> A Wedge (▲) bond comes OUT of the screen, and a Dash (---) bond goes INTO the screen.",
+      "displayMolecules": ["chiral_bromide", "hydroxide"]
+    },
+    {
+      "step": 3,
+      "title": "Electrophilic Aromatic Substitution",
+      "narration": "The pi electrons of the benzene ring attack an electrophile.",
+      "description": "The electron-rich benzene ring acts as a nucleophile, attacking the electrophile (R+). This temporarily breaks the aromaticity of the ring, forming a resonance-stabilized carbocation known as a sigma complex.",
+      "displayMolecules": ["benzene", "electrophile"]
+    },
+    {
+      "step": 4,
+      "title": "Final Products",
+      "narration": "The reaction yields several products from the parallel steps.",
+      "description": "This step shows the final, stable products formed from the preceding reactions: a bromine radical, an inverted alcohol, and a substituted benzene ring.",
+      "displayMolecules": ["br_rad", "inverted_alcohol", "substituted_benzene"]
+    }
+  ]
+}`
+        };
+
+        // --- UI & Control Functions ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function generatePrompt() {
+            const topic = document.getElementById('topicInput').value.trim();
+            if (!topic) {
+                showMessage('Please enter a chemistry topic first!', 'danger');
+                return;
+            }
+            const prompt = UNIVERSAL_PROMPT.replace('[TOPIC_PLACEHOLDER]', topic);
+            document.getElementById('generatedPrompt').value = prompt;
+            document.getElementById('promptOutput').style.display = 'block';
+            showMessage('AI prompt generated!', 'success');
+        }
+
+        function sendToPerplexity() {
+            const prompt = document.getElementById('generatedPrompt').value;
+            if (!prompt) {
+                showMessage('Please generate a prompt first!', 'warning');
+                return;
+            }
+            window.open(`https://www.perplexity.ai/?q=${encodeURIComponent(prompt)}`, '_blank');
+        }
+
+        function copyPrompt() {
+            const promptText = document.getElementById('generatedPrompt');
+            if (!promptText.value) {
+                showMessage('No prompt to copy!', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(promptText.value).then(() => showMessage('Prompt copied!', 'success'));
+        }
+        async function pasteFromClipboard() {
+            try {
+                document.getElementById('jsonInput').value = await navigator.clipboard.readText();
+                showMessage('Pasted! Now click Visualize.', 'success');
+            } catch (err) {
+                showMessage('Paste failed. Your browser might require HTTPS.', 'danger');
+            }
+        }
+
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('statusMessages');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            const iconMap = {
+                info: 'bi-info-circle',
+                success: 'bi-check-circle',
+                danger: 'bi-exclamation-triangle'
+            };
+            alert.innerHTML = `<i class="bi ${iconMap[type] || 'bi-info-circle'}"></i> <span>${message}</span>`;
+            container.prepend(alert);
+            setTimeout(() => {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            }, 4000);
+        }
+
+        // --- Data Handling & Validation ---
+        function findAndParseBestJson(text) {
+            const jsonRegex = /```json\s*([\s\S]*?)\s*```|({[\s\S]*})/;
+            const match = text.match(jsonRegex);
+            if (!match) return null;
+            const jsonString = match[1] || match[2];
+            try {
+                return JSON.parse(jsonString);
+            } catch (e) {
+                console.error("Failed to parse JSON:", e);
+                return null;
+            }
+        }
+
+        function validateJSON(data) {
+            if (!data.meta || !data.mechanism || !data.molecules) throw new Error('Missing root fields: meta, mechanism, molecules.');
+            if (!Array.isArray(data.mechanism) || data.mechanism.length === 0) throw new Error('Mechanism array is empty or invalid.');
+            return true;
+        }
+
+        // --- Visualization Core ---
+        function visualizeJSON() {
+            const jsonText = document.getElementById('jsonInput').value.trim();
+            if (!jsonText) {
+                showMessage('Please paste the AI response first!', 'danger');
+                return;
+            }
+            mechanismData = findAndParseBestJson(jsonText);
+            if (!mechanismData) {
+                showMessage('No valid JSON found. Ensure it is a single object.', 'danger');
+                return;
+            }
+
+            try {
+                validateJSON(mechanismData);
+                initializeVisualization();
+                document.getElementById('bottomControls').style.display = 'flex';
+                document.getElementById('step-info-box').style.display = 'block';
+                document.getElementById('mechanism-timeline').style.display = 'flex';
+                showMessage('Visualization ready!', 'success');
+                if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+            } catch (error) {
+                showMessage('JSON validation error: ' + error.message, 'danger');
+                console.error(error);
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('topicInput').value = '';
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('promptOutput').style.display = 'none';
+            document.getElementById('bottomControls').style.display = 'none';
+            document.getElementById('step-info-box').style.display = 'none';
+            document.getElementById('mechanism-timeline').style.display = 'none';
+            document.getElementById('conditionsPanel').style.display = 'none';
+            if (p5Instance) {
+                p5Instance.remove();
+                p5Instance = null;
+            }
+            document.getElementById('emptyState').style.display = 'block';
+            mechanismData = null;
+            currentStep = 0;
+            isPlaying = false;
+            panX = 0;
+            panY = 0;
+            showMessage('All cleared!', 'info');
+        }
+
+        function calculateSceneBounds() {
+            let minX = Infinity,
+                minY = Infinity,
+                maxX = -Infinity,
+                maxY = -Infinity,
+                atomCount = 0;
+            if (!mechanismData || !mechanismData.molecules) return {
+                centerX: 0,
+                centerY: 0,
+                width: 1,
+                height: 1
+            };
+
+            for (const mol of Object.values(mechanismData.molecules)) {
+                if (!mol.atoms) continue;
+                const molX = mol.position?.x || 0;
+                const molY = mol.position?.y || 0;
+                for (const atom of mol.atoms) {
+                    const atomX = atom.position.x + molX;
+                    const atomY = atom.position.y + molY;
+                    minX = Math.min(minX, atomX);
+                    minY = Math.min(minY, atomY);
+                    maxX = Math.max(maxX, atomX);
+                    maxY = Math.max(maxY, atomY);
+                    atomCount++;
+                }
+            }
+            if (atomCount === 0) return {
+                centerX: 0,
+                centerY: 0,
+                width: 1,
+                height: 1
+            };
+            return {
+                centerX: (minX + maxX) / 2,
+                centerY: (minY + maxY) / 2,
+                width: Math.max(1, maxX - minX),
+                height: Math.max(1, maxY - minY)
+            };
+        }
+
+        function initializeVisualization() {
+            if (p5Instance) p5Instance.remove();
+            const container = document.getElementById('visualizationContainer');
+            if (container.querySelector('canvas')) container.querySelector('canvas').remove();
+            document.getElementById('emptyState').style.display = 'none';
+
+            buildMechanismTimeline();
+            populateConditionsPanel();
+
+            const sketch = (p) => {
+                p.setup = () => {
+                    const canvas = p.createCanvas(container.clientWidth, container.clientHeight);
+                    canvas.parent('visualizationContainer');
+                    p.frameRate(60);
+                    p.textFont('Inter');
+
+                    const bounds = calculateSceneBounds();
+                    const padding = 1.8;
+                    scaleFactor = Math.min(p.width / (bounds.width * padding), p.height / (bounds.height * padding));
+                    scaleFactor = Math.max(0.5, Math.min(3.0, scaleFactor));
+
+                    panX = p.width / 2 - bounds.centerX * scaleFactor;
+                    panY = p.height / 2 - bounds.centerY * scaleFactor;
+
+                    initializeRuntimeMolecules();
+                    currentStep = 0;
+                    isPlaying = false;
+                    updateStepInfo();
+                    updateTimeline();
+                };
+                p.mousePressed = (e) => {
+                    if (e.target.tagName !== 'CANVAS') return;
+                    isDragging = true;
+                    lastMouseX = p.mouseX;
+                    lastMouseY = p.mouseY;
+                };
+                p.mouseReleased = () => isDragging = false;
+                p.mouseDragged = () => {
+                    if (isDragging) {
+                        panX += p.mouseX - lastMouseX;
+                        panY += p.mouseY - lastMouseY;
+                        lastMouseX = p.mouseX;
+                        lastMouseY = p.mouseY;
+                    }
+                };
+                p.mouseWheel = (event) => {
+                    if (event.target.tagName !== 'CANVAS') return;
+                    event.preventDefault();
+                    const zoomFactor = 1 - event.delta * 0.001;
+                    const newScale = scaleFactor * zoomFactor;
+                    if (newScale > 0.1 && newScale < 10) {
+                        const mouseWorldX = (p.mouseX - panX) / scaleFactor;
+                        const mouseWorldY = (p.mouseY - panY) / scaleFactor;
+                        panX = p.mouseX - mouseWorldX * newScale;
+                        panY = p.mouseY - mouseWorldY * newScale;
+                        scaleFactor = newScale;
+                    }
+                };
+                p.draw = () => {
+                    fpsCounter++;
+                    p.background(2, 6, 23);
+                    p.push();
+                    p.translate(panX, panY);
+                    p.scale(scaleFactor);
+                    drawEnhancedMolecules(p);
+                    drawEnhancedAnimations(p);
+                    p.pop();
+                };
+                p.windowResized = () => p.resizeCanvas(container.clientWidth, container.clientHeight);
+            };
+            p5Instance = new p5(sketch);
+        }
+
+        function initializeRuntimeMolecules() {
+            molecules = JSON.parse(JSON.stringify(mechanismData.molecules));
+        }
+
+        // --- Drawing Functions ---
+        function getAtomWorldPosition(targetString) {
+            if (!targetString || !targetString.includes('.')) return null;
+            const [molKey, targetId] = targetString.split('.');
+            const molecule = molecules[molKey];
+            if (!molecule) return null;
+            const atom = molecule.atoms?.find(a => a.id === targetId);
+            if (atom) {
+                return {
+                    x: (molecule.position?.x || 0) + atom.position.x,
+                    y: (molecule.position?.y || 0) + atom.position.y
+                };
+            }
+            const bond = molecule.bonds?.find(b => b.id === targetId);
+            if (bond) {
+                const atomFrom = molecule.atoms.find(a => a.id === bond.from);
+                const atomTo = molecule.atoms.find(a => a.id === bond.to);
+                if (atomFrom && atomTo) {
+                    return {
+                        x: (molecule.position?.x || 0) + (atomFrom.position.x + atomTo.position.x) / 2,
+                        y: (molecule.position?.y || 0) + (atomFrom.position.y + atomTo.position.y) / 2
+                    };
+                }
+            }
+            return null;
+        }
+
+        function drawEnhancedMolecules(p) {
+            const step = mechanismData?.mechanism?. [currentStep];
+            if (!step) return;
+            const visibleKeys = step.displayMolecules || [];
+            for (const molKey of visibleKeys) {
+                const molecule = molecules[molKey];
+                if (!molecule) continue;
+                p.push();
+                p.translate(molecule.position?.x || 0, molecule.position?.y || 0);
+                if (molecule.bonds) drawEnhancedBonds(p, molecule);
+                if (molecule.atoms) drawEnhancedAtoms(p, molecule);
+                p.pop();
+            }
+        }
+
+        function drawEnhancedBonds(p, molecule) {
+            const baseWeight = 4;
+            for (let bond of molecule.bonds) {
+                const a1 = molecule.atoms.find(a => a.id === bond.from);
+                const a2 = molecule.atoms.find(a => a.id === bond.to);
+                if (!a1 || !a2) continue;
+                const c = p.color(bond.runtimeColor || bond.color || '#94a3b8');
+                p.stroke(p.red(c), p.green(c), p.blue(c), bond.runtimeAlpha ?? 255);
+                const weight = bond.runtimeWeight ?? baseWeight;
+                const {
+                    x: x1,
+                    y: y1
+                } = a1.position;
+                const {
+                    x: x2,
+                    y: y2
+                } = a2.position;
+
+                switch (bond.type) {
+                    case 'double': {
+                        const offset = 4;
+                        const angle = p.atan2(y2 - y1, x2 - x1),
+                            perpAngle = angle + p.HALF_PI;
+                        const dx = offset * p.cos(perpAngle),
+                            dy = offset * p.sin(perpAngle);
+                        p.strokeWeight(weight / 2);
+                        p.line(x1 + dx, y1 + dy, x2 + dx, y2 + dy);
+                        p.line(x1 - dx, y1 - dy, x2 - dx, y2 - dy);
+                        break;
+                    }
+                    case 'triple': {
+                        const offset = 5;
+                        const angle = p.atan2(y2 - y1, x2 - x1),
+                            perpAngle = angle + p.HALF_PI;
+                        const dx = offset * p.cos(perpAngle),
+                            dy = offset * p.sin(perpAngle);
+                        p.strokeWeight(weight / 3);
+                        p.line(x1, y1, x2, y2);
+                        p.line(x1 + dx, y1 + dy, x2 + dx, y2 + dy);
+                        p.line(x1 - dx, y1 - dy, x2 - dx, y2 - dy);
+                        break;
+                    }
+                    case 'wedge': {
+                        p.noStroke();
+                        p.fill(p.red(c), p.green(c), p.blue(c), bond.runtimeAlpha ?? 255);
+                        const angle = p.atan2(y2 - y1, x2 - x1) + p.HALF_PI;
+                        const w = 8;
+                        p.triangle(x1, y1, x2 + w * p.cos(angle), y2 + w * p.sin(angle), x2 - w * p.cos(angle), y2 - w * p.sin(angle));
+                        break;
+                    }
+                    case 'dash': {
+                        p.strokeWeight(weight);
+                        p.drawingContext.setLineDash([6, 8]);
+                        p.line(x1, y1, x2, y2);
+                        p.drawingContext.setLineDash([]);
+                        break;
+                    }
+                    default:
+                        p.strokeWeight(weight);
+                        p.line(x1, y1, x2, y2);
+                        break;
+                }
+            }
+        }
+
+        function drawEnhancedAtoms(p, molecule) {
+            const colors = {
+                C: '#404040',
+                H: '#ffffff',
+                O: '#ef4444',
+                N: '#3b82f6',
+                Br: '#a16207',
+                Cl: '#16a34a',
+                F: '#22c55e',
+                S: '#f59e0b',
+                Al: '#a8a29e',
+                R: '#9ca3af'
+            };
+            for (let atom of molecule.atoms) {
+                const color = colors[atom.element] || '#94a3b8';
+                const size = atom.size || (atom.element === 'H' ? 12 : 16);
+                p.fill(color);
+                p.stroke(255, 80);
+                p.strokeWeight(1.5);
+                p.ellipse(atom.position.x, atom.position.y, size * 1.8);
+
+                if (atom.element !== 'C' || (molecule.atoms.length < 3 && atom.element === 'C')) {
+                    p.fill(atom.element === 'H' ? '#000' : '#fff');
+                    p.noStroke();
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.textSize(size * 0.85);
+                    p.textStyle(p.BOLD);
+                    p.text(atom.element, atom.position.x, atom.position.y + 1);
+                }
+
+                if (atom.charge) {
+                    p.fill(atom.charge > 0 ? '#ef4444' : '#3b82f6');
+                    p.noStroke();
+                    p.textSize(size * 0.9);
+                    p.textStyle(p.NORMAL);
+                    const chargeStr = (atom.charge > 0 ? '+' : '–') + (Math.abs(atom.charge) > 1 ? Math.abs(atom.charge) : '');
+                    p.text(chargeStr, atom.position.x + size * 0.8, atom.position.y - size * 0.8);
+                }
+                if (atom.radical) {
+                    p.fill('#ef4444');
+                    p.noStroke();
+                    p.circle(atom.position.x + size * 0.8, atom.position.y - size * 0.8, size * 0.3);
+                }
+            }
+        }
+
+        function drawEnhancedAnimations(p) {
+            const step = mechanismData?.mechanism?. [currentStep];
+            if (!step || !step.actions) return;
+            const elapsed = Date.now() - stepStartTime;
+
+            Object.values(molecules).forEach(mol => mol.bonds?.forEach(b => {
+                delete b.runtimeAlpha;
+                delete b.runtimeWeight;
+                delete b.runtimeColor;
+            }));
+
+            for (let action of step.actions) {
+                if (elapsed < (action.delay || 0)) continue;
+                const progress = Math.min((elapsed - (action.delay || 0)) / (action.duration || 2000), 1);
+
+                if (action.type === 'ELECTRON_ARROW') {
+                    drawEnhancedElectronArrow(p, action, progress);
+                } else if (action.target) {
+                    const [molKey, bondId] = action.target.split('.');
+                    const bond = molecules[molKey]?.bonds.find(b => b.id === bondId);
+                    if (!bond) continue;
+
+                    if (action.type === 'BOND_ANIMATION') {
+                        if (action.animationType === 'breaking') bond.runtimeAlpha = p.lerp(255, 0, progress);
+                        if (action.animationType === 'formation') bond.runtimeAlpha = p.lerp(0, 255, progress);
+                        if (action.animationType === 'vibration') bond.runtimeWeight = 4 + p.sin(progress * p.TWO_PI * 4) * 2;
+                    } else if (action.type === 'HIGHLIGHT_BOND') {
+                        const pulse = 0.5 + p.sin(progress * p.TWO_PI * 2) * 0.5;
+                        bond.runtimeWeight = p.lerp(4, 8, pulse);
+                        const baseColor = p.color(bond.color || '#94a3b8');
+                        const highlightColor = p.color(action.style === 'pulse_blue' ? '#3b82f6' : '#f97316');
+                        bond.runtimeColor = p.lerpColor(baseColor, highlightColor, pulse);
+                    }
+                }
+            }
+        }
+
+        function drawEnhancedElectronArrow(p, action, progress) {
+            const fromPos = getAtomWorldPosition(action.from);
+            const toPos = getAtomWorldPosition(action.to);
+            if (!fromPos || !toPos) return;
+
+            let controlPoint = action.controlPoint;
+            if (!controlPoint) {
+                const midX = (fromPos.x + toPos.x) / 2;
+                const midY = (fromPos.y + toPos.y) / 2;
+                const d = p.dist(fromPos.x, fromPos.y, toPos.x, toPos.y);
+                const perpX = -(toPos.y - fromPos.y) / d;
+                const perpY = (toPos.x - fromPos.x) / d;
+                controlPoint = {
+                    x: midX + perpX * d * 0.3,
+                    y: midY + perpY * d * 0.3
+                };
+            }
+
+            const t = progress;
+            const currentX = p.bezierPoint(fromPos.x, fromPos.x, controlPoint.x, toPos.x, t);
+            const currentY = p.bezierPoint(fromPos.y, fromPos.y, controlPoint.y, toPos.y, t);
+            p.stroke(action.color || '#fbbf24');
+            p.strokeWeight(action.thickness || 2.5);
+            p.noFill();
+            p.beginShape();
+            for (let i = 0; i <= t; i += 0.02) {
+                let x = p.bezierPoint(fromPos.x, fromPos.x, controlPoint.x, toPos.x, i);
+                let y = p.bezierPoint(fromPos.y, fromPos.y, controlPoint.y, toPos.y, i);
+                p.vertex(x, y);
+            }
+            p.endShape();
+
+            if (progress > 0.02) {
+                const tangentX = p.bezierTangent(fromPos.x, fromPos.x, controlPoint.x, toPos.x, t);
+                const tangentY = p.bezierTangent(fromPos.y, fromPos.y, controlPoint.y, toPos.y, t);
+                const angle = p.atan2(tangentY, tangentX);
+                p.push();
+                p.translate(currentX, currentY);
+                p.rotate(angle);
+                p.fill(action.color || '#fbbf24');
+                p.noStroke();
+                p.triangle(0, 0, -10, 5, -10, -5);
+                p.pop();
+            }
+        }
+
+        // --- UI Update & Control Functions ---
+        function buildMechanismTimeline() {
+            const container = document.getElementById('mechanism-timeline');
+            container.innerHTML = '';
+            mechanismData?.mechanism?.forEach((step, index) => {
+                const stepBox = document.createElement('div');
+                stepBox.className = 'step-box';
+                stepBox.id = `step-box-${index}`;
+                stepBox.textContent = `Step ${step.step || index + 1}`;
+                container.appendChild(stepBox);
+                if (index < mechanismData.mechanism.length - 1) {
+                    const arrow = document.createElement('div');
+                    arrow.className = 'step-arrow';
+                    arrow.innerHTML = '&rArr;';
+                    container.appendChild(arrow);
+                }
+            });
+        }
+
+        function populateConditionsPanel() {
+            const panel = document.getElementById('conditionsPanel');
+            if (!mechanismData) {
+                panel.innerHTML = '';
+                return;
+            }
+            let content = '';
+            if (mechanismData.meta) content += `<h3><i class="bi bi-flask"></i> ${mechanismData.meta.reactionName || 'Reaction'}</h3>`;
+            if (mechanismData.conditions) {
+                const {
+                    temperature,
+                    reagents,
+                    solvent
+                } = mechanismData.conditions;
+                if (temperature) content += `<div class="condition-item"><strong>Temperature:</strong> ${temperature.value} ${temperature.unit}</div>`;
+                if (solvent) content += `<div class="condition-item"><strong>Solvent:</strong> ${solvent.name} (${solvent.polarity || 'N/A'})</div>`;
+                if (reagents?.length > 0) {
+                    content += '<div class="condition-item"><strong>Reagents:</strong></div>';
+                    reagents.forEach(r => {
+                        content += `<div class="condition-item" style="margin-left: 1rem; font-size: 0.8em;">• ${r.name} - ${r.role || 'N/A'}</div>`;
+                    });
+                }
+            }
+            if (mechanismData.educational) {
+                content += '<h3><i class="bi bi-lightbulb"></i> Learning Points</h3>';
+                mechanismData.educational.keyPoints?.forEach(point => {
+                    content += `<div class="condition-item">• ${point}</div>`;
+                });
+            }
+            panel.innerHTML = content;
+        }
+
+        function toggleConditionsPanel() {
+            const panel = document.getElementById('conditionsPanel');
+            const isVisible = panel.style.display !== 'none';
+            panel.style.display = isVisible ? 'none' : 'flex';
+            document.getElementById('infoBtn').style.background = isVisible ? 'var(--primary-blue)' : '';
+        }
+
+        function updateStepInfo() {
+            const step = mechanismData?.mechanism?. [currentStep];
+            if (!step) return;
+            document.getElementById('step-info-summary').textContent = step.title || `Step ${step.step || currentStep + 1}`;
+            document.getElementById('step-info-description').innerHTML = step.description || step.narration || 'No description.';
+        }
+
+        function updateTimeline() {
+            document.querySelectorAll('.step-box').forEach((box, index) => box.classList.toggle('active', index === currentStep));
+            const activeBox = document.querySelector(`#step-box-${currentStep}`);
+            activeBox?.scrollIntoView({
+                behavior: 'smooth',
+                inline: 'center',
+                block: 'nearest'
+            });
+        }
+
+        function toggleAnimation() {
+            isPlaying = !isPlaying;
+            document.getElementById('playPauseBtn').innerHTML = isPlaying ? '<i class="bi bi-pause-fill"></i>' : '<i class="bi bi-play-fill"></i>';
+            if (isPlaying) {
+                if (!speechEnginePrimed && 'speechSynthesis' in window) {
+                    speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+                    speechEnginePrimed = true;
+                }
+                stepStartTime = Date.now();
+                playCurrentStep();
+            } else if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+        }
+
+        function playCurrentStep() {
+            if (!isPlaying || !mechanismData || currentStep >= mechanismData.mechanism.length) {
+                isPlaying = false;
+                document.getElementById('playPauseBtn').innerHTML = '<i class="bi bi-play-fill"></i>';
+                return;
+            }
+            const step = mechanismData.mechanism[currentStep];
+            const onEnd = () => setTimeout(() => {
+                if (isPlaying) {
+                    nextStep();
+                }
+            }, 1500);
+
+            if (narrationEnabled && step.narration && 'speechSynthesis' in window) {
+                const u = new SpeechSynthesisUtterance(step.narration);
+                u.onend = onEnd;
+                speechSynthesis.speak(u);
+            } else {
+                let maxDuration = 3000;
+                step.actions?.forEach(a => {
+                    maxDuration = Math.max(maxDuration, (a.delay || 0) + (a.duration || 2000));
+                });
+                setTimeout(onEnd, maxDuration);
+            }
+        }
+
+        function nextStep() {
+            if (!mechanismData) return;
+            if (currentStep < mechanismData.mechanism.length - 1) {
+                currentStep++;
+            } else {
+                isPlaying = false;
+                document.getElementById('playPauseBtn').innerHTML = '<i class="bi bi-play-fill"></i>';
+                showMessage('Mechanism completed! 🎉 Looping to start.', 'success');
+                currentStep = 0;
+            }
+            stepStartTime = Date.now();
+            updateStepInfo();
+            updateTimeline();
+            if (isPlaying) playCurrentStep();
+        }
+
+        function prevStep() {
+            if (currentStep > 0) currentStep--;
+            else currentStep = mechanismData.mechanism.length - 1;
+            stepStartTime = Date.now();
+            updateStepInfo();
+            updateTimeline();
+            if ('speechSynthesis' in window) speechSynthesis.cancel();
+        }
+
+        function toggleNarration() {
+            narrationEnabled = !narrationEnabled;
+            const btn = document.getElementById('narrationBtn');
+            btn.innerHTML = narrationEnabled ? '<i class="bi bi-volume-up"></i>' : '<i class="bi bi-volume-mute"></i>';
+            if (!narrationEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
+        }
+
+        function loadExample(topic) {
+            const jsonString = exampleData[topic] || '{}';
+            if (jsonString === '{}' && topic !== 'Comprehensive Demo') {
+                showMessage(`Example for '${topic}' not implemented yet.`, 'warning');
+                return;
+            }
+            document.getElementById('jsonInput').value = jsonString;
+            showMessage(`Loaded '${topic}' example. Click Visualize!`, 'info');
+            if (!document.getElementById('sidebar').classList.contains('open')) {
+                toggleSidebar();
+            }
+        }
+
+        function showHelp() {
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        function hideHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // --- NEW STATIC HTML EXPORT FUNCTIONS ---
+
+        function exportStaticHTML() {
+            if (!mechanismData) {
+                showMessage('Please visualize a mechanism first!', 'warning');
+                return;
+            }
+            const htmlContent = generateStaticHTML(mechanismData);
+            const blob = new Blob([htmlContent], {
+                type: 'text/html'
+            });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            showMessage('Static HTML page generated in new tab!', 'success');
+        }
+
+        function generateStaticHTML(data) {
+            const {
+                meta,
+                mechanism,
+                molecules
+            } = data;
+
+            const renderMolecule = (molKey) => {
+                const molecule = molecules[molKey];
+                if (!molecule) return `<div>Molecule ${molKey} not found</div>`;
+
+                let formula = (molecule.atoms || []).map(atom => {
+                    let atomStr = atom.element;
+                    if (atom.charge) atomStr += `<span class="superscript ${atom.charge > 0 ? 'positive-charge' : 'negative-charge'}">${atom.charge > 0 ? '+' : '−'}</span>`;
+                    if (atom.radical) atomStr += `<span class="radical-symbol">•</span>`;
+                    return atomStr;
+                }).join(' ');
+
+                // Simple check for stereochemistry for visual cue
+                const hasStereo = (molecule.bonds || []).some(b => b.type === 'wedge' || b.type === 'dash');
+
+                return `
+                    <div class="structure" style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <strong>${molecule.name || molKey}</strong>
+                        <div style="font-family: monospace; font-size: 18px; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px;">${formula}</div>
+                        ${hasStereo ? '<small style="color: #888;">(Has Stereochemistry)</small>' : ''}
+                    </div>
+                `;
+            };
+
+            const renderMoleculesGroup = (molKeys) => {
+                return molKeys.map(renderMolecule).join('<span class="plus">+</span>');
+            };
+
+            const mechanismStepsHTML = mechanism.map((step, index) => {
+                // Determine reactants and products for this step
+                const reactants = step.displayMolecules;
+                const products = (index + 1 < mechanism.length) ? mechanism[index + 1].displayMolecules : null;
+
+                return `
+                <div class="rxn-box">
+                    <div class="step-label">Step ${step.step || index + 1}: ${step.title}</div>
+                    <div class="rxn-step">
+                        <div class="step-tag">${step.title}</div>
+                        ${renderMoleculesGroup(reactants)}
+                        
+                        ${products ? `
+                        <div class="arrow-block">
+                            <div class="reaction-arrow">
+                                <div class="arrow-body"></div>
+                            </div>
+                        </div>
+                        ${renderMoleculesGroup(products)}
+                        ` : `<div class="product-box"><span class="product-label">Final Products</span>${renderMoleculesGroup(reactants)}</div>`}
+                    </div>
+                    <div class="tip" style="margin-top: 20px;">
+                        <h3>Step Description</h3>
+                        <p>${step.description || step.narration}</p>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // The full HTML page string using the demo's styles
+            return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Static Mechanism: ${meta.reactionName}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; background-color: #f0f2f5; margin: 0; padding: 0; }
+                    .canvas { padding: 50px 15px; }
+                    .content-wrap { max-width: 1200px; margin: 0 auto; }
+                    .rxn-title { background: white; padding: 25px; border-radius: 18px; margin: 20px auto 35px; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.1); text-align: center; border: 4px solid #e74c3c; max-width: 95%; }
+                    .rxn-title h1 { color: #e74c3c; font-size: 32px; margin: 0 0 12px; }
+                    .rxn-title p { color: #666; margin: 0; font-size: 17px; }
+                    .rxn-box { background: white; border-radius: 18px; padding: 35px; margin: 35px auto; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1); border: 4px solid #3498db; max-width: 95%; position: relative; }
+                    .rxn-step { display: flex; align-items: center; justify-content: center; gap: 2%; margin: 40px 0; position: relative; flex-wrap: wrap; }
+                    .step-tag { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 9px 22px; border-radius: 20px; font-weight: bold; font-size: 16px; box-shadow: 0 5px 18px rgba(102, 126, 234, 0.4); white-space: nowrap; }
+                    .step-label { font-size: 19px; color: #2e7d32; font-weight: bold; margin: -10px 0 18px; display: block; text-align: center; background: rgba(46, 125, 50, 0.1); padding: 12px; border-radius: 10px; border: 3px solid #2e7d32; }
+                    .structure { position: relative; display: inline-flex; align-items: center; padding: 10px; flex-shrink: 0; }
+                    .superscript { font-size: 15px; vertical-align: super; }
+                    .positive-charge { color: #d32f2f; font-weight: bold; }
+                    .negative-charge { color: #1976d2; font-weight: bold; }
+                    .radical-symbol { color: #d32f2f; font-weight: bold; display: inline-block; transform: translateY(-5px) translateX(-2px); }
+                    .arrow-block { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 15px; flex-shrink: 0; }
+                    .reaction-arrow { position: relative; display: inline-flex; align-items: center; }
+                    .arrow-body { width: 100px; height: 3px; background: #1a1a1a; position: relative; }
+                    .arrow-body::after { content: ''; position: absolute; right: -9px; top: -6px; width: 0; height: 0; border-left: 13px solid #1a1a1a; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+                    .plus { font-size: 32px; font-weight: bold; margin: 0 15px; flex-shrink: 0; color: #555; }
+                    .product-box { background: rgba(46, 125, 50, 0.12); border: 3px solid #2e7d32; padding: 18px; border-radius: 12px; display: inline-flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
+                    .product-label { color: #2e7d32; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+                    .tip { background: #fffbe6; border: 2px solid #fde68a; border-radius: 12px; padding: 22px 25px; margin: 15px auto; box-shadow: 0 4px 15px rgba(224, 179, 11, 0.2); position: relative; max-width: 95%;}
+                    .tip h3 { color: #ca8a04; margin: 0 0 10px; font-size: 18px; }
+                    .tip p { color: #334155; line-height: 1.6; font-size: 15px; margin:0;}
+                </style>
+            </head>
+            <body>
+                <div class="canvas">
+                    <div class="content-wrap">
+                        <div class="rxn-title">
+                            <h1>${meta.reactionName}</h1>
+                            <p>${meta.reactionType}</p>
+                        </div>
+                        ${mechanismStepsHTML}
+                    </div>
+                </div>
+            </body>
+            </html>
+            `;
+        }
+
+
+        // --- DOM Event Listeners ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const setAppHeight = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+            window.addEventListener('resize', setAppHeight);
+            setAppHeight();
+
+            setInterval(() => {
+                document.getElementById('fpsDisplay').textContent = p5Instance ? Math.round(p5Instance.frameRate()) : '0';
+            }, 1000);
+
+            document.addEventListener('keydown', (e) => {
+                const isModalOpen = document.getElementById('helpModal').style.display === 'flex';
+                if (e.code === 'Escape' && isModalOpen) {
+                    hideHelp();
+                    return;
+                }
+                if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+                if (mechanismData) {
+                    const keyMap = {
+                        'Space': toggleAnimation,
+                        'ArrowLeft': prevStep,
+                        'ArrowRight': nextStep,
+                        'KeyI': toggleConditionsPanel,
+                        'KeyM': toggleNarration
+                    };
+                    if (keyMap[e.code]) {
+                        e.preventDefault();
+                        keyMap[e.code]();
+                    }
+                }
+            });
+            document.getElementById('helpModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) hideHelp();
+            });
+        });
+    </script>
+</body>
+
+</html>
