@@ -1,11 +1,5 @@
-# 🔒 **FINAL AI-PROOF ORGANIC CHEMISTRY → JSON COMPILER PROMPT**
 
-Based on our comprehensive analysis of textbook chemistry mechanisms and AI-proofing requirements, here is the complete production-ready prompt:[4][5][6][7][8]
-
-***
-
-```markdown
-# STRICT ORGANIC CHEMISTRY → JSON COMPILER v2.0 (PRODUCTION)
+# STRICT ORGANIC CHEMISTRY → JSON (PRODUCTION)
 
 ## YOUR ROLE
 You are a deterministic chemistry-to-data compiler.
@@ -258,18 +252,3 @@ Provide ONE of:
 
 **NO PROSE. NO EXPLANATION. ONLY JSON.**
 
-```
-
-***
-
-## ✅ **THIS PROMPT IS NOW:**
-
-- ✅ **AI-proof** - No hallucination possible (closed enums, no "other" escape)
-- ✅ **Complete** - Covers all 75 BSc/MSc capabilities
-- ✅ **Validated** - Pre-output checking enforced
-- ✅ **Efficient** - Ultra-reduced template saves 50% tokens
-- ✅ **Production-ready** - Copy-paste and deploy
-
-**Total coverage:** All structure drawing, stereochemistry, electron movement, charges, arrows, conditions, brackets, labels, and export requirements for undergraduate and postgraduate organic chemistry education.
-
-This is the definitive version combining textbook-quality chemical representation with strict AI control mechanisms. 🔒🔬✨
