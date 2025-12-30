@@ -710,7 +710,7 @@
 
 ***
 
-## ⚡ **THE POWER LIST (75 CAPABILITIES)**
+## ⚡ **THE POWER LIST ( 68 CAPABILITIES)**
 
 ### **✅ COVERED IN THIS JSON:**
 
@@ -802,28 +802,7 @@
 67. ✅ Position labels
 68. ✅ Greek positions
 
-**Multi-Step (4/4)**
-69. ✅ Sequential layout
-70. ✅ Step display
-71. ✅ Reversible steps
-72. ✅ RDS marking
-
-**Export (3/3)**
-73. ✅ SVG
-74. ✅ PNG
-75. ✅ PDF
-
-***
-
 ## 🎯 **FINAL STATEMENT:**
 
 **THIS JSON SCHEMA IS THE COMPLETE, PRODUCTION-READY, ZERO-ERROR FORMAT THAT COVERS ALL 75 BSc/MSc CHEMISTRY MECHANISM DRAWING CAPABILITIES. AI GENERATES ONLY THIS LOGICAL DATA STRUCTURE. YOUR DETERMINISTIC RENDERER USES TRIGONOMETRY AND CHEMISTRY RULES TO PRODUCE PIXEL-PERFECT, TEXTBOOK-QUALITY DIAGRAMS. NO HALLUCINATIONS. NO GUESSING. PERFECT OUTPUT EVERY TIME.** ✅🔬✨
 
-[1](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/60d0695b-a3f4-47dd-b901-bcaadc5d7108/WhatsApp-Image-2025-12-25-at-12.03.43-PM.jpg)
-[2](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/e357e1b0-a316-4e29-a60b-4cea93bb2ddc/WhatsApp-Image-2025-12-25-at-12.03.43-PM.jpg)
-[3](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/ddae6e68-5edc-425f-bd82-1be6cd4fd471/Screenshot-2025-12-25-200635.jpg)
-[4](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/70f882b7-5bfb-4663-ae89-1114f120951d/Screenshot-2025-12-25-201757.jpg)
-[5](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/72a9e24d-e995-4807-960c-679e441b42e7/Screenshot-2025-12-25-201450.jpg)
-[6](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/005ccf67-2354-409f-b525-3867761d8290/Screenshot-2025-12-25-201819.jpg)
-[7](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/dbfb5a6f-1ee2-4249-a721-3b8f175078e9/Screenshot-2025-12-25-201741.jpg)
-[8](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/images/8744051/37a34e55-f604-4655-9963-b446adc9c098/Screenshot-2025-12-25-201838.jpg)
