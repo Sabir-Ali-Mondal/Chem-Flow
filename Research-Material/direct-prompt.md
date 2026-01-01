@@ -1,44 +1,46 @@
 **Role:** You are an expert Chemical Visualization Engineer and Frontend Developer.
 
 **Objective:**
-I will provide a chemical reaction (via title, text description, or image context). You must generate a **single-file HTML/JS/CSS solution** that visualizes the reaction mechanism step-by-step using a "Professional Textbook" scrollable layout.
+I will provide a chemical reaction. You must generate a **single-file HTML/JS/CSS solution** that visualizes the mechanism using a **"Textbook Equation" layout**.
 
 **Code Architecture Requirements:**
-1.  **Data-Driven:** The core of the solution must be a `const DATA` JSON object.
-2.  **Visualization Engine:** Use vanilla JavaScript and SVG to render the JSON. Do not use external libraries (no canvas, no jQuery).
-3.  **Layout:** A vertical, scrollable page where each step is a distinct `<section>` with a description and an SVG graphic.
+1.  **Data-Driven:** Use a `const DATA` JSON object as the single source of truth.
+2.  **Engine:** Vanilla JavaScript and SVG only (No canvas, no external libraries).
+3.  **Layout:**
+    *   Create a vertical list of steps.
+    *   **Crucial:** Each step must use a **Flexbox Row** layout:
+        *   **Left Panel:** Reactants + Electron Pushing Arrows (SVG).
+        *   **Center Panel:** A straight reaction arrow ($\rightarrow$) with conditions (e.g., heat, reagents) text above/below it.
+        *   **Right Panel:** Products (SVG).
 
-**JSON Schema Specifications (Strict Adherence):**
-The `DATA` object must follow this structure:
+**JSON Schema Specifications:**
 ```json
 {
   "molecules": [
     {
       "id": "string",
-      "renderMode": "structure" | "condensed",
-      "label": "string (only for condensed)",
       "atoms": [
-        { "id": "string", "element": "C|O|H...", "coords": [x, y], "charge": 0, "radical": boolean }
+        { "id": "string", "element": "C|O|H...", "coords": [x, y], "charge": 0 }
       ],
       "bonds": [
-        { "from": "atomId", "to": "atomId", "type": "single" | "double" | "triple" | "aromatic" | "wedge" | "hash" }
+        { "from": "id", "to": "id", "type": "single" | "double" }
       ]
     }
   ],
   "steps": [
     {
-      "stepType": "string (e.g., Nucleophilic Attack)",
+      "title": "string",
       "description": "string",
-      "reactants": ["mol_id_1", ...],
-      "products": ["mol_id_2", ...],
-      "conditionTop": "string (e.g., heat)",
-      "conditionBot": "string",
-      "arrows": [
+      "reactants": ["mol_id_1", ...], // Rendered in Left Panel
+      "products": ["mol_id_2", ...],  // Rendered in Right Panel
+      "conditionTop": "string (e.g. NaOH)",
+      "conditionBot": "string (e.g. -H2O)",
+      "arrows": [ // Electron pushing arrows (Only on Left Panel)
         {
           "from": { "mol": "id", "atom": "id" },
           "to": { "mol": "id", "atom": "id" },
-          "type": "normal" | "radical",
-          "startFromBond": { "atom1": "id", "atom2": "id" } (optional)
+          "type": "normal",
+          "startFromBond": { "atom1": "id", "atom2": "id" } // optional
         }
       ]
     }
@@ -46,18 +48,22 @@ The `DATA` object must follow this structure:
 }
 ```
 
-**Rendering & Visual Rules:**
-1.  **Coordinate System:** You must mentally calculate reasonable `[x, y]` coordinates for the molecules so they look chemically accurate (e.g., Hexagons for Benzene, 120-degree angles for sp2). Center the reaction in the SVG (`viewBox="0 0 900 350"`).
-2.  **Arrows (Crucial):**
-    *   Use **Bezier curves** (SVG `<path>`).
-    *   **Opacity:** Arrows must be semi-transparent (`opacity: 0.6`) so they don't obscure bonds.
-    *   **Retraction:** The arrowhead must stop **15px short** of the target atom so it doesn't cover the element text.
-    *   **Radical Support:** If `type: "radical"`, use a "Fishhook" (half-arrow) marker.
-3.  **Bond Styles:**
-    *   Support `wedge` (solid polygon), `hash` (dashed line), and `aromatic` (solid lines).
+**Rendering & Visual Rules (Strict):**
+1.  **Coordinate System:**
+    *   Since Reactants and Products are in separate SVGs, normalize coordinates for a smaller `viewBox="0 0 400 300"`.
+    *   Center molecules around `x=200, y=150`.
+2.  **Electron Pushing Arrows (Left Panel Only):**
+    *   **Style:** Curved Bezier paths.
+    *   **Arrow Heads:** Do **NOT** use SVG `<marker>`. You must manually render a triangle shape.
+    *   **Positioning:** Calculate the specific point **$t$** (e.g., `t=0.65`) along the Bezier curve and place the arrowhead there (the "Mid-Point" style: `---<---` or `-->---`).
+    *   **Math:** Use a helper function `getBezierPoint(t, p0, p1, p2)` to determine coordinates and rotation angle.
+3.  **Reaction Arrow (Center Panel):**
+    *   Use CSS/HTML to draw a straight horizontal line with a CSS triangle tip.
+    *   Place `conditionTop` text above the line and `conditionBot` text below it.
 4.  **Styling:**
-    *   Use a clean, academic CSS (Serif fonts for text, Sans-serif for headers).
-    *   Colors: Dark Blue/Grey for structure, Red (`#e74c3c`) for electron movement, Purple (`#8e44ad`) for radicals.
+    *   Use Serif fonts (Times New Roman/Georgia) for the body to look like a textbook.
+    *   Atoms: Circle background (white) + Text.
+    *   Colors: Black/Dark Grey for bonds/atoms. Red (`#e74c3c`) for electron flow arrows.
 
 **Input Reaction:**
-[INSERT YOUR REACTION TITLE OR DESCRIPTION HERE]
+[INSERT REACTION HERE]
