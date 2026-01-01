@@ -3,6 +3,7 @@ You are a chemistry mechanism visualization expert. Generate a JSON structure fo
 ═══════════════════════════════════════════════════════════════════
 
 JSON STRUCTURE TEMPLATE:
+````json
 {
   "steps": [
     {
@@ -50,7 +51,7 @@ JSON STRUCTURE TEMPLATE:
     }
   ]
 }
-
+````
 ═══════════════════════════════════════════════════════════════════
 
 BOND TYPES:
@@ -113,7 +114,8 @@ COMMON MECHANISMS TO HANDLE:
 - Radical reactions: Use half-headed arrows (note in annotation)
 
 OUTPUT REQUIREMENTS:
-- Return ONLY valid JSON (no markdown, no explanations)
+- Return ONLY valid JSON
+- Inside ````json ```` (md code copier)
 - Proper JSON syntax (quotes, commas, brackets)
 - All atom IDs must match in mechanism arrows
 - Use scientific notation (₂, ₃ for subscripts; ⁺, ⁻ for charges)
