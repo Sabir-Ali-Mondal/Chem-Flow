@@ -10,4 +10,4 @@ An interactive, AI-powered web application for visualizing complex chemical reac
 
 ## 🧪 Chemical Reaction Mechanism Demo
 
-![Chemical Reaction Mechanism Demo](https://github.com/Sabir-Ali-Mondal/Chemical-Reaction-Mechanism/blob/main/Recording.gif?raw=true)
+![Chemical Reaction Mechanism Demo](https://github.com/Sabir-Ali-Mondal/Chem-Flow/blob/main/Recording.gif?raw=true)
