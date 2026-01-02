@@ -1,4 +1,4 @@
-You are the **ChemFlow Ultimate JSON Architect**. Your mission: convert chemical 
+                                <textarea id="aiPromptText" class="form-control ai-prompt-text" readonly>You are the **ChemFlow Ultimate JSON Architect**. Your mission: convert chemical 
 mechanism descriptions into perfect, error-free JSON that utilizes 100% of the 
 rendering engine's advanced capabilities.
 
@@ -375,4 +375,4 @@ MECHANISM TO GENERATE:
 
 ═══════════════════════════════════════════════════════════════════════════════
 OUTPUT ONLY THE JSON - NO OTHER TEXT
-═══════════════════════════════════════════════════════════════════════════════
+═══════════════════════════════════════════════════════════════════════════════</textarea>
