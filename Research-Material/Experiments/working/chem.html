@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemFlow Ultimate</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        header {
+            height: 60px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        .brand span {
+            color: var(--primary);
+        }
+
+        .btn {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* CANVAS STAGE */
+        .stage {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+        }
+
+        /* SCROLL CONTAINER WITH CUSTOM BARS */
+        .scroll-area {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-image: linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(90deg, #f1f5f9 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* 50px SCROLLBARS */
+        .scroll-area::-webkit-scrollbar {
+            width: 50px;
+            height: 50px;
+        }
+
+        .scroll-area::-webkit-scrollbar-track {
+            background: #fff;
+            border-left: 1px solid #e2e8f0;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 25px;
+            border: 18px solid #fff;
+            background-clip: content-box;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+            border: 16px solid #fff;
+        }
+
+        .scroll-area::-webkit-scrollbar-corner {
+            background: #fff;
+        }
+
+        /* SVG STYLES */
+        .chem-svg {
+            display: block;
+        }
+
+        .label-text {
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 700;
+            fill: var(--text-sub);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .desc-text {
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 400;
+            fill: var(--text-main);
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        /* Chemistry Styles */
+        .atom-text {
+            font-family: Arial, sans-serif;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: central;
+            fill: #0f172a;
+        }
+
+        .atom-halo {
+            stroke: #fff;
+            stroke-width: 6px;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        .bond {
+            stroke: #0f172a;
+            stroke-width: 2.2px;
+            stroke-linecap: round;
+            fill: none;
+        }
+
+        .bond-wedge {
+            fill: #0f172a;
+            stroke: none;
+        }
+
+        .bond-dash {
+            stroke-dasharray: 4, 3;
+        }
+
+        .reaction-arrow {
+            stroke: #0f172a;
+            stroke-width: 2px;
+            fill: none;
+        }
+
+        .mech-arrow {
+            stroke: var(--primary);
+            stroke-width: 2px;
+            fill: none;
+        }
+
+        .mech-arrow:hover {
+            stroke-width: 3px;
+            cursor: help;
+        }
+
+        /* Brackets */
+        .bracket {
+            stroke: #64748b;
+            stroke-width: 2px;
+            fill: none;
+        }
+
+        .ts-symbol {
+            font-weight: bold;
+            font-size: 18px;
+            fill: #64748b;
+        }
+
+        /* MODAL */
+        .modal-wrap {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-wrap.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            width: 600px;
+            max-width: 90%;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: monospace;
+            background: #f8fafc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand">ChemFlow <span>Ultimate</span></div>
+        <div>
+            <button class="btn" onclick="openModal()">Input Data</button>
+            <button class="btn btn-primary" onclick="loadBenzeneDemo()">Load Benzene Demo</button>
+        </div>
+    </header>
+
+    <div class="stage">
+        <div class="scroll-area" id="canvas-container"></div>
+    </div>
+
+    <!-- EDITOR MODAL -->
+    <div class="modal-wrap" id="modal">
+        <div class="modal">
+            <h3 style="margin-top:0">Reaction Data (JSON)</h3>
+            <p style="font-size:0.9rem; color:#666">Paste the JSON structure here.</p>
+            <textarea id="jsonInput"></textarea>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn" onclick="document.getElementById('modal').classList.remove('active')">Cancel</button>
+                <button class="btn btn-primary" onclick="renderUser()">Visualize</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const NS = "http://www.w3.org/2000/svg";
+
+        class ChemEngine {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.scale = 45; // Grid unit to pixels
+                this.atomReg = {};
+                this.defs = null;
+            }
+
+            initSVG(w, h) {
+                this.container.innerHTML = '';
+                this.svg = document.createElementNS(NS, "svg");
+                this.svg.classList.add("chem-svg");
+                this.svg.setAttribute("width", w);
+                this.svg.setAttribute("height", h);
+
+                // DEFS (Markers)
+                this.defs = document.createElementNS(NS, "defs");
+                // Sharp Reaction Head
+                this.createMarker("rxn-head", "#0f172a", "M0,0 L10,4 L0,8 L2,4 z");
+                // Sharp Mech Head (Blue)
+                this.createMarker("mech-head", "#2563eb", "M0,0 L10,4 L0,8 L2,4 z");
+                // Retro Head (Open)
+                this.createMarker("retro-head", "#0f172a", "M0,0 L10,5 L0,10 L1,5 z"); // Simplified retro
+
+                this.svg.appendChild(this.defs);
+                this.layerMain = document.createElementNS(NS, "g");
+                this.svg.appendChild(this.layerMain);
+                this.container.appendChild(this.svg);
+            }
+
+            createMarker(id, color, d) {
+                const m = document.createElementNS(NS, "marker");
+                m.setAttribute("id", id);
+                m.setAttribute("markerWidth", "10");
+                m.setAttribute("markerHeight", "10");
+                m.setAttribute("refX", "9");
+                m.setAttribute("refY", "4");
+                m.setAttribute("orient", "auto");
+                const p = document.createElementNS(NS, "path");
+                p.setAttribute("d", d);
+                p.setAttribute("fill", color);
+                m.appendChild(p);
+                this.defs.appendChild(m);
+            }
+
+            // --- MAIN RENDERER ---
+            render(data) {
+                const stepHeight = 400;
+                const totalH = Math.max(1000, data.steps.length * stepHeight + 100);
+                this.initSVG(2500, totalH); // Wide canvas
+
+                const labelColWidth = 300; // Requirement: Far from reaction
+                let cursorY = 100;
+
+                data.steps.forEach((step, i) => {
+                    // 1. LEFT COLUMN: Annotations
+                    this.drawText(`STEP ${i+1}`, 50, cursorY, "label-text");
+                    if (step.annotation) {
+                        this.drawText(step.annotation, 50, cursorY + 25, "desc-text");
+                    }
+
+                    // 2. RIGHT COLUMN: Chemistry
+                    // Divider Line
+                    this.drawDivider(labelColWidth - 50, cursorY - 50, labelColWidth - 50, cursorY + stepHeight - 50);
+
+                    let cursorX = labelColWidth + 50;
+
+                    // Reactants
+                    step.reactants.forEach(mol => {
+                        cursorX += this.drawMolecule(mol, cursorX, cursorY);
+                        cursorX += 60;
+                    });
+
+                    // Reaction Arrow
+                    this.drawReactionArrow(cursorX, cursorY, step.arrow);
+
+                    // Mechanism Arrows (Overlay)
+                    if (step.mechanism) {
+                        step.mechanism.forEach(m => this.drawMechArrow(m));
+                    }
+
+                    cursorX += 150;
+
+                    // Products
+                    step.products.forEach(mol => {
+                        cursorX += this.drawMolecule(mol, cursorX, cursorY);
+                        cursorX += 60;
+                    });
+
+                    // Brackets (Transition States etc)
+                    if (step.brackets) {
+                        step.brackets.forEach(b => this.drawBracket(b, labelColWidth + 50, cursorY));
+                    }
+
+                    cursorY += stepHeight;
+                });
+            }
+
+            // --- ATOMS & BONDS ---
+            drawMolecule(mol, offX, offY) {
+                const xs = mol.atoms.map(a => a.x);
+                const width = (Math.max(...xs) - Math.min(...xs)) * this.scale;
+
+                // 1. Calculate Pixels
+                mol.atoms.forEach(a => {
+                    const px = (a.x - Math.min(...xs)) * this.scale + offX;
+                    const py = (a.y * this.scale) + offY;
+                    this.atomReg[a.id] = {
+                        x: px,
+                        y: py
+                    };
+                });
+
+                // 2. Bonds
+                mol.bonds.forEach(b => {
+                    const p1 = this.atomReg[b.from];
+                    const p2 = this.atomReg[b.to];
+                    if (p1 && p2) this.drawBond(p1, p2, b.type);
+                });
+
+                // 3. Atoms
+                mol.atoms.forEach(a => {
+                    const p = this.atomReg[a.id];
+                    this.drawAtom(a, p.x, p.y);
+                });
+
+                return width;
+            }
+
+            drawAtom(a, x, y) {
+                const g = document.createElementNS(NS, "g");
+                g.setAttribute("transform", `translate(${x},${y})`);
+
+                // Implicit C handling: If symbol is "C" and part of ring, usually just dot or nothing.
+                // But keeping explicit text for clarity in this engine.
+
+                // Parse Subscripts (e.g. NO2)
+                const content = a.symbol.replace(/(\d+)/g, '<tspan dy="4" font-size="0.75em">$1</tspan><tspan dy="-4" font-size="1em"> </tspan>');
+
+                // Halo & Text
+                const h = document.createElementNS(NS, "text");
+                h.innerHTML = content;
+                h.className.baseVal = "atom-halo";
+                const t = document.createElementNS(NS, "text");
+                t.innerHTML = content;
+                t.className.baseVal = "atom-text";
+                g.appendChild(h);
+                g.appendChild(t);
+
+                // Isotope (Superscript left)
+                if (a.isotope) {
+                    const iso = document.createElementNS(NS, "text");
+                    iso.textContent = a.isotope;
+                    iso.setAttribute("x", -10);
+                    iso.setAttribute("y", -6);
+                    iso.setAttribute("font-size", "10");
+                    iso.setAttribute("font-weight", "bold");
+                    g.appendChild(iso);
+                }
+
+                // Charge
+                if (a.charge) {
+                    const c = document.createElementNS(NS, "text");
+                    c.textContent = a.charge === "+" ? "⊕" : (a.charge === "-" ? "⊖" : a.charge);
+                    c.setAttribute("x", 12);
+                    c.setAttribute("y", -8);
+                    c.setAttribute("fill", a.charge.includes("+") ? "var(--primary)" : "#dc2626");
+                    c.setAttribute("font-weight", "bold");
+                    c.setAttribute("font-size", "12");
+                    g.appendChild(c);
+                }
+
+                // Lone Pairs (Dots)
+                if (a.lonePairs) {
+                    this.drawLonePairs(g, a.lonePairs);
+                }
+
+                this.layerMain.appendChild(g);
+            }
+
+            drawLonePairs(group, count) {
+                // Simplified visualization: Just dots above/around
+                for (let i = 0; i < count; i++) {
+                    const c1 = document.createElementNS(NS, "circle");
+                    c1.setAttribute("r", 1.5);
+                    c1.setAttribute("cx", -4 + i * 8);
+                    c1.setAttribute("cy", -12);
+                    const c2 = document.createElementNS(NS, "circle");
+                    c2.setAttribute("r", 1.5);
+                    c2.setAttribute("cx", -1 + i * 8);
+                    c2.setAttribute("cy", -12);
+                    group.appendChild(c1);
+                    group.appendChild(c2);
+                }
+            }
+
+            drawBond(p1, p2, type) {
+                const dx = p2.x - p1.x,
+                    dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const nx = -dy / dist,
+                    ny = dx / dist;
+
+                const pad = 14;
+                const sx = p1.x + (dx / dist) * pad,
+                    sy = p1.y + (dy / dist) * pad;
+                const ex = p2.x - (dx / dist) * pad,
+                    ey = p2.y - (dy / dist) * pad;
+
+                const path = document.createElementNS(NS, "path");
+                let d = "";
+
+                if (type === "double") {
+                    const off = 3;
+                    d = `M${sx+nx*off},${sy+ny*off} L${ex+nx*off},${ey+ny*off} M${sx-nx*off},${sy-ny*off} L${ex-nx*off},${ey-ny*off}`;
+                } else if (type === "triple") {
+                    const off = 3.5;
+                    d = `M${sx},${sy} L${ex},${ey} M${sx+nx*off},${sy+ny*off} L${ex+nx*off},${ey+ny*off} M${sx-nx*off},${sy-ny*off} L${ex-nx*off},${ey-ny*off}`;
+                } else if (type === "wedge") {
+                    const w = 4;
+                    d = `M${sx},${sy} L${ex+nx*w},${ey+ny*w} L${ex-nx*w},${ey-ny*w} Z`;
+                    path.setAttribute("class", "bond-wedge");
+                } else if (type === "dash") {
+                    d = `M${sx},${sy} L${ex},${ey}`;
+                    path.setAttribute("class", "bond bond-dash");
+                } else if (type === "wavy") {
+                    // Sine wave approximation
+                    path.setAttribute("class", "bond");
+                    const steps = 6;
+                    d = `M${sx},${sy}`;
+                    for (let i = 1; i <= steps; i++) {
+                        const t = i / steps;
+                        const tx = sx + (ex - sx) * t;
+                        const ty = sy + (ey - sy) * t;
+                        const amp = (i % 2 === 0 ? 3 : -3);
+                        d += ` L${tx + nx*amp},${ty + ny*amp}`;
+                    }
+                } else {
+                    d = `M${sx},${sy} L${ex},${ey}`;
+                    path.setAttribute("class", "bond");
+                }
+
+                if (type !== "wedge") path.setAttribute("d", d);
+                else path.setAttribute("d", d); // Logic split for classes above
+
+                this.layerMain.insertBefore(path, this.layerMain.firstChild);
+            }
+
+            // --- ARROWS & MECHANISMS ---
+            drawReactionArrow(x, y, arrow) {
+                const w = 100;
+                const g = document.createElementNS(NS, "g");
+                let p = document.createElementNS(NS, "path");
+                p.setAttribute("class", "reaction-arrow");
+
+                if (arrow.type === "retro") {
+                    // Double line arrow =>
+                    const off = 2;
+                    p.setAttribute("d", `M${x},${y-off} L${x+w},${y-off} M${x},${y+off} L${x+w},${y+off}`);
+                    p.setAttribute("marker-end", "url(#retro-head)"); // Simplified
+                } else if (arrow.type === "resonance") {
+                    // <->
+                    p.setAttribute("d", `M${x},${y} L${x+w},${y}`);
+                    p.setAttribute("marker-start", "url(#rxn-head)");
+                    p.setAttribute("marker-end", "url(#rxn-head)");
+                } else if (arrow.type === "eq") {
+                    // Harpoons
+                    const h = 4;
+                    const p1 = p.cloneNode();
+                    p1.setAttribute("d", `M${x},${y-h} L${x+w},${y-h}`);
+                    p1.setAttribute("marker-end", "url(#rxn-head)");
+                    const p2 = p.cloneNode();
+                    p2.setAttribute("d", `M${x+w},${y+h} L${x},${y+h}`);
+                    p2.setAttribute("marker-end", "url(#rxn-head)");
+                    g.appendChild(p1);
+                    g.appendChild(p2);
+                    p = null; // Handled
+                } else {
+                    // Forward
+                    p.setAttribute("d", `M${x},${y} L${x+w},${y}`);
+                    p.setAttribute("marker-end", "url(#rxn-head)");
+                }
+
+                if (p) g.appendChild(p);
+
+                // Labels
+                if (arrow.text_above) {
+                    const t = document.createElementNS(NS, "text");
+                    t.textContent = arrow.text_above;
+                    t.setAttribute("x", x + w / 2);
+                    t.setAttribute("y", y - 15);
+                    t.setAttribute("text-anchor", "middle");
+                    t.setAttribute("font-size", "11");
+                    g.appendChild(t);
+                }
+                this.layerMain.appendChild(g);
+            }
+
+            drawMechArrow(mech) {
+                const p1 = this.atomReg[mech.from];
+                const p2 = this.atomReg[mech.to];
+                if (!p1 || !p2) return;
+
+                const mx = (p1.x + p2.x) / 2,
+                    my = (p1.y + p2.y) / 2;
+                const dx = p2.x - p1.x,
+                    dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const nx = -dy / dist,
+                    ny = dx / dist;
+
+                const h = mech.curve || -40;
+                const cx = mx + nx * h,
+                    cy = my + ny * h;
+
+                const path = document.createElementNS(NS, "path");
+                path.setAttribute("d", `M${p1.x},${p1.y} Q${cx},${cy} ${p2.x},${p2.y}`);
+                path.setAttribute("class", "mech-arrow");
+                path.setAttribute("marker-end", "url(#mech-head)");
+                this.layerMain.appendChild(path);
+            }
+
+            drawBracket(b, offX, offY) {
+                // Brackets for Transition States
+                // Expects b.rect = [gridX, gridY, gridW, gridH]
+                const x = b.rect[0] * this.scale + offX - 20;
+                const y = b.rect[1] * this.scale + offY - 20;
+                const w = b.rect[2] * this.scale + 40;
+                const h = b.rect[3] * this.scale + 40;
+                const d = 10; // corner depth
+
+                const path = document.createElementNS(NS, "path");
+                path.setAttribute("d", `M${x+d},${y} L${x},${y} L${x},${y+h} L${x+d},${y+h}  M${x+w-d},${y} L${x+w},${y} L${x+w},${y+h} L${x+w-d},${y+h}`);
+                path.setAttribute("class", "bracket");
+                this.layerMain.appendChild(path);
+
+                if (b.label) {
+                    const t = document.createElementNS(NS, "text");
+                    t.textContent = b.label;
+                    t.setAttribute("x", x + w + 5);
+                    t.setAttribute("y", y + 20);
+                    t.setAttribute("class", "ts-symbol");
+                    this.layerMain.appendChild(t);
+                }
+            }
+
+            drawText(str, x, y, cls) {
+                const t = document.createElementNS(NS, "text");
+                t.textContent = str;
+                t.setAttribute("x", x);
+                t.setAttribute("y", y);
+                t.setAttribute("class", cls);
+                this.layerMain.appendChild(t);
+            }
+
+            drawDivider(x1, y1, x2, y2) {
+                const l = document.createElementNS(NS, "line");
+                l.setAttribute("x1", x1);
+                l.setAttribute("x2", x2);
+                l.setAttribute("y1", y1);
+                l.setAttribute("y2", y2);
+                l.setAttribute("stroke", "#e2e8f0");
+                l.setAttribute("stroke-width", "2");
+                this.layerMain.appendChild(l);
+            }
+        }
+
+        /* --- DEMO DATA: BENZENE NITRATION --- */
+        const engine = new ChemEngine("canvas-container");
+
+        function openModal() {
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function renderUser() {
+            try {
+                const d = JSON.parse(document.getElementById('jsonInput').value);
+                engine.render(d);
+                document.getElementById('modal').classList.remove('active');
+            } catch (e) {
+                alert("Invalid JSON");
+            }
+        }
+
+        function loadBenzeneDemo() {
+            const data = {
+                "steps": [{
+                        "step_id": 1,
+                        "annotation": "Generation of Electrophile (Nitronium Ion)",
+                        "reactants": [{
+                            "atoms": [{
+                                    "symbol": "HO",
+                                    "x": 0,
+                                    "y": 0,
+                                    "id": "n1"
+                                },
+                                {
+                                    "symbol": "NO2",
+                                    "x": 1.5,
+                                    "y": 0,
+                                    "id": "n2"
+                                },
+                                {
+                                    "symbol": "H",
+                                    "x": 0,
+                                    "y": -1.5,
+                                    "id": "h_acid",
+                                    "charge": "+"
+                                }
+                            ],
+                            "bonds": [{
+                                "from": "n1",
+                                "to": "n2",
+                                "type": "single"
+                            }]
+                        }],
+                        "mechanism": [{
+                            "from": "n1",
+                            "to": "h_acid",
+                            "curve": -40
+                        }],
+                        "arrow": {
+                            "type": "eq"
+                        },
+                        "products": [{
+                            "atoms": [{
+                                    "symbol": "H2O",
+                                    "x": 0,
+                                    "y": 0,
+                                    "id": "p_w",
+                                    "charge": "+"
+                                },
+                                {
+                                    "symbol": "NO2",
+                                    "x": 1.5,
+                                    "y": 0,
+                                    "id": "p_n2"
+                                }
+                            ],
+                            "bonds": [{
+                                "from": "p_w",
+                                "to": "p_n2",
+                                "type": "single"
+                            }]
+                        }]
+                    },
+                    {
+                        "step_id": 2,
+                        "annotation": "Electrophilic Attack on Benzene",
+                        "reactants": [{
+                            "atoms": [{
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": -1.4,
+                                    "id": "c1"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": -0.7,
+                                    "id": "c2"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": 0.7,
+                                    "id": "c3"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": 1.4,
+                                    "id": "c4"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": 0.7,
+                                    "id": "c5"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": -0.7,
+                                    "id": "c6"
+                                },
+                                {
+                                    "symbol": "NO2",
+                                    "x": 1.2,
+                                    "y": -2.5,
+                                    "id": "elec",
+                                    "charge": "+"
+                                }
+                            ],
+                            "bonds": [{
+                                    "from": "c1",
+                                    "to": "c2",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "c2",
+                                    "to": "c3",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "c3",
+                                    "to": "c4",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "c4",
+                                    "to": "c5",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "c5",
+                                    "to": "c6",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "c6",
+                                    "to": "c1",
+                                    "type": "single"
+                                }
+                            ]
+                        }],
+                        "mechanism": [{
+                            "from": "c1",
+                            "to": "elec",
+                            "curve": -50,
+                            "description": "Pi electrons attack"
+                        }],
+                        "arrow": {
+                            "type": "fwd",
+                            "text_above": "Slow"
+                        },
+                        "products": [{
+                            "atoms": [{
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": -1.4,
+                                    "id": "ts_c1"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": -0.7,
+                                    "id": "ts_c2",
+                                    "charge": "+"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": 0.7,
+                                    "id": "ts_c3"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": 1.4,
+                                    "id": "ts_c4"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": 0.7,
+                                    "id": "ts_c5"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": -0.7,
+                                    "id": "ts_c6"
+                                },
+                                {
+                                    "symbol": "H",
+                                    "x": -0.5,
+                                    "y": -2.2,
+                                    "id": "ts_h"
+                                },
+                                {
+                                    "symbol": "NO2",
+                                    "x": 0.5,
+                                    "y": -2.2,
+                                    "id": "ts_no2"
+                                }
+                            ],
+                            "bonds": [{
+                                    "from": "ts_c1",
+                                    "to": "ts_c2",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "ts_c2",
+                                    "to": "ts_c3",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "ts_c3",
+                                    "to": "ts_c4",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "ts_c4",
+                                    "to": "ts_c5",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "ts_c5",
+                                    "to": "ts_c6",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "ts_c6",
+                                    "to": "ts_c1",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "ts_c1",
+                                    "to": "ts_h",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "ts_c1",
+                                    "to": "ts_no2",
+                                    "type": "single"
+                                }
+                            ]
+                        }],
+                        "brackets": [{
+                            "rect": [-1.5, -2.5, 3.5, 4.5],
+                            "label": "‡"
+                        }]
+                    },
+                    {
+                        "step_id": 3,
+                        "annotation": "Restoration of Aromaticity",
+                        "reactants": [{
+                            "atoms": [{
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": -1.4,
+                                    "id": "r3_c1"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": -0.7,
+                                    "id": "r3_c2",
+                                    "charge": "+"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": 0.7,
+                                    "id": "r3_c3"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": 1.4,
+                                    "id": "r3_c4"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": 0.7,
+                                    "id": "r3_c5"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": -0.7,
+                                    "id": "r3_c6"
+                                },
+                                {
+                                    "symbol": "H",
+                                    "x": -0.8,
+                                    "y": -2.2,
+                                    "id": "r3_h"
+                                },
+                                {
+                                    "symbol": "NO2",
+                                    "x": 0.8,
+                                    "y": -2.2,
+                                    "id": "r3_no2"
+                                },
+                                {
+                                    "symbol": "B",
+                                    "x": -2,
+                                    "y": -2,
+                                    "id": "base",
+                                    "charge": "-"
+                                }
+                            ],
+                            "bonds": [{
+                                    "from": "r3_c1",
+                                    "to": "r3_c2",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "r3_c2",
+                                    "to": "r3_c3",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "r3_c3",
+                                    "to": "r3_c4",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "r3_c4",
+                                    "to": "r3_c5",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "r3_c5",
+                                    "to": "r3_c6",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "r3_c6",
+                                    "to": "r3_c1",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "r3_c1",
+                                    "to": "r3_h",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "r3_c1",
+                                    "to": "r3_no2",
+                                    "type": "single"
+                                }
+                            ]
+                        }],
+                        "mechanism": [{
+                                "from": "base",
+                                "to": "r3_h",
+                                "curve": 30
+                            },
+                            {
+                                "from": "r3_h",
+                                "to": "r3_c1",
+                                "curve": 30,
+                                "description": "Bond electrons reform Pi system"
+                            }
+                        ],
+                        "arrow": {
+                            "type": "fwd",
+                            "text_above": "Fast"
+                        },
+                        "products": [{
+                            "atoms": [{
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": -1.4,
+                                    "id": "fin_c1"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": -0.7,
+                                    "id": "fin_c2"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 1.2,
+                                    "y": 0.7,
+                                    "id": "fin_c3"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": 0,
+                                    "y": 1.4,
+                                    "id": "fin_c4"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": 0.7,
+                                    "id": "fin_c5"
+                                },
+                                {
+                                    "symbol": "C",
+                                    "x": -1.2,
+                                    "y": -0.7,
+                                    "id": "fin_c6"
+                                },
+                                {
+                                    "symbol": "NO2",
+                                    "x": 0,
+                                    "y": -2.8,
+                                    "id": "fin_no2"
+                                }
+                            ],
+                            "bonds": [{
+                                    "from": "fin_c1",
+                                    "to": "fin_c2",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "fin_c2",
+                                    "to": "fin_c3",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "fin_c3",
+                                    "to": "fin_c4",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "fin_c4",
+                                    "to": "fin_c5",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "fin_c5",
+                                    "to": "fin_c6",
+                                    "type": "double"
+                                },
+                                {
+                                    "from": "fin_c6",
+                                    "to": "fin_c1",
+                                    "type": "single"
+                                },
+                                {
+                                    "from": "fin_c1",
+                                    "to": "fin_no2",
+                                    "type": "single"
+                                }
+                            ]
+                        }]
+                    }
+                ]
+            };
+            document.getElementById("jsonInput").value = JSON.stringify(data, null, 2);
+            engine.render(data);
+        }
+    </script>
+</body>
+
+</html>
