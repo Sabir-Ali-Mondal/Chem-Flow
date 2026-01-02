@@ -109,7 +109,7 @@ Automatic positioning of atoms when coordinates are omitted.
 
 ***
 
-## 8. Dynamic Height System (NEW - v2.1)
+## 8. Dynamic Height System
 
 Automatic spacing calculation based on actual molecule height.
 
@@ -196,15 +196,4 @@ Core rendering engine that orchestrates all drawing functions.
 - **Auto Features:** 2 (layout + height calculation)
 - **Special Effects:** 4 (isotopes, charges, lone pairs, subscripts)
 
-***
-
-## New Features in v2.1
-
-✅ Dynamic Height Calculation (no overflow!)  
-✅ Per-step height adjustment  
-✅ Vertical centering of molecules  
-✅ Minimal padding (180px instead of 450px)  
-✅ Smooth scaling from small to huge reactions
-
-***
 
