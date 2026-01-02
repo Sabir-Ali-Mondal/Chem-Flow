@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemEngine v3 - Extended Capability</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --bg-deep: #05070a;
+            --accent: #7c3aed;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
+            color: #f8fafc;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(circle at 50% -20%, rgba(124, 58, 237, 0.15) 0%, transparent 60%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass {
+            background: rgba(11, 13, 17, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(15, 19, 26, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(124, 58, 237, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- CHEMICAL STYLING --- */
+        .canvas-group {
+            cursor: grab;
+        }
+
+        .canvas-group:active {
+            cursor: grabbing;
+        }
+
+        /* Bonds */
+        .bond-line {
+            stroke: #e2e8f0;
+            stroke-width: 2.5px;
+            stroke-linecap: round;
+        }
+
+        .bond-double {
+            stroke: #e2e8f0;
+            stroke-width: 2.5px;
+            stroke-linecap: round;
+        }
+
+        .bond-aromatic {
+            stroke: #fbbf24;
+            stroke-width: 2px;
+            stroke-dasharray: 5, 3;
+            stroke-linecap: round;
+        }
+
+        .bond-wedge {
+            fill: #e2e8f0;
+            stroke: none;
+        }
+
+        .bond-dash {
+            stroke: #e2e8f0;
+            stroke-width: 2px;
+            stroke-dasharray: 4, 3;
+            stroke-linecap: round;
+        }
+
+        /* Atoms */
+        .atom-text {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            fill: #f8fafc;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .atom-bg {
+            fill: #0f172a;
+            stroke: #334155;
+            stroke-width: 0;
+            transition: all 0.2s;
+        }
+
+        .atom-group:hover .atom-bg {
+            stroke-width: 2px;
+            stroke: #7c3aed;
+        }
+
+        /* Element Colors */
+        .el-O .atom-text {
+            fill: #ff6b6b;
+        }
+
+        .el-N .atom-text {
+            fill: #4dabf7;
+        }
+
+        .el-Cl .atom-text {
+            fill: #51cf66;
+        }
+
+        .el-Br .atom-text {
+            fill: #ff922b;
+        }
+
+        .el-Al .atom-text {
+            fill: #9ca3af;
+        }
+
+        /* Arrows */
+        .arrow-path {
+            fill: none;
+            stroke: #a78bfa;
+            stroke-width: 3px;
+            stroke-dasharray: 6;
+            marker-end: url(#arrowhead);
+            filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
+            animation: flow 1s linear infinite;
+        }
+
+        @keyframes flow {
+            to {
+                stroke-dashoffset: -12;
+            }
+        }
+
+        /* Benzene Ring Highlight */
+        .benzene-ring {
+            fill: rgba(251, 191, 36, 0.03);
+            stroke: rgba(251, 191, 36, 0.2);
+            stroke-width: 1.5px;
+            stroke-dasharray: 3, 2;
+        }
+    </style>
+</head>
+
+<body class="text-slate-200">
+    <div class="bg-mesh"></div>
+
+    <!-- SVG DEFS -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <marker id="arrowhead" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M0,-5L10,0L0,5" fill="#a78bfa" />
+            </marker>
+        </defs>
+    </svg>
+
+    <!-- HEADER -->
+    <header class="fixed top-0 w-full z-[100] px-6 py-4 glass flex justify-between items-center">
+        <div class="flex items-center gap-3 cursor-pointer group" onclick="window.location.reload()">
+            <i class="bi bi-hexagon-fill text-violet-500 text-2xl group-hover:rotate-90 transition-transform duration-500"></i>
+            <span class="font-black text-lg tracking-tighter uppercase text-white">Chem<span class="text-violet-500">Engine</span></span>
+        </div>
+        <button onclick="openStudio()" class="px-6 py-2 bg-white/5 hover:bg-violet-600 hover:text-white text-slate-300 rounded-full transition-all font-bold text-sm border border-white/10 flex items-center gap-2">
+            <i class="bi bi-code-slash"></i> JSON Studio
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto pt-28 px-6 pb-20">
+        <!-- HERO -->
+        <div id="view-hero" class="flex flex-col items-center justify-center text-center mt-20">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center mb-8 shadow-2xl shadow-violet-500/20">
+                <i class="bi bi-diagram-3-fill text-5xl text-white"></i>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-black mb-6 tracking-tighter text-white">Algorithmic Chemistry.</h1>
+            <p class="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium">
+                A logic-driven visualization engine. Converts pure JSON data into textbook-grade interactive diagrams using force-directed geometry.
+            </p>
+            <div class="flex gap-4">
+                <button onclick="openStudio()" class="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold text-lg border border-white/10 transition-all">
+                    Input Data
+                </button>
+                <button onclick="loadSample()" class="px-10 py-4 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-black text-lg shadow-xl hover:scale-105 transition-all">
+                    <i class="bi bi-play-fill mr-2"></i> Run Simulation
+                </button>
+            </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="view-results" class="hidden">
+            <div class="flex justify-between items-end mb-12 border-b border-white/5 pb-8">
+                <div>
+                    <h1 id="reaction-title" class="text-4xl font-black text-white tracking-tighter mb-2">Reaction Name</h1>
+                    <div class="flex gap-3">
+                        <span class="bg-violet-500/10 text-violet-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-violet-500/20">Live Simulation</span>
+                        <span class="bg-amber-500/10 text-amber-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-amber-500/20">Benzene Ring Active</span>
+                    </div>
+                </div>
+                <button onclick="window.location.reload()" class="px-5 py-2 bg-white/5 hover:text-red-400 rounded-xl text-xs font-bold transition-all">
+                    Restart Engine
+                </button>
+            </div>
+            <div id="steps-container" class="flex flex-col gap-20"></div>
+        </div>
+    </main>
+
+    <!-- MODAL: STUDIO -->
+    <div id="modal-studio" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div class="bg-[#0b0d11] border border-white/10 w-full max-w-5xl h-[85vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl scale-in">
+
+            <!-- Modal Header -->
+            <div class="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-[#0b0d11]">
+                <div class="flex gap-8">
+                    <button id="tab-ai" onclick="switchTab('ai')" class="text-sm font-bold uppercase tracking-widest text-violet-500 border-b-2 border-violet-500 pb-1 transition-all">AI Designer</button>
+                    <button id="tab-json" onclick="switchTab('json')" class="text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all pb-1">JSON Input</button>
+                </div>
+                <button onclick="toggleModal('modal-studio', false)" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-red-500/10 transition-colors text-white">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-8 bg-[#0b0d11] relative">
+
+                <!-- TAB 1: AI DESIGNER -->
+                <div id="content-ai" class="grid grid-cols-1 lg:grid-cols-2 gap-10 h-full">
+                    <div class="flex flex-col gap-6">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Reaction Title / Prompt</label>
+                            <input type="text" id="ai-prompt" placeholder="e.g. Friedel-Crafts Acylation" class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 focus:border-violet-500 outline-none transition text-white font-bold placeholder-slate-600">
+                        </div>
+                        <div class="flex-1 flex flex-col gap-2">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Reference Image</label>
+                            <div class="relative flex-1 bg-black/40 rounded-2xl border border-white/5 border-dashed overflow-hidden min-h-[250px] group flex items-center justify-center hover:bg-violet-500/5 transition-colors cursor-pointer">
+                                <div class="flex flex-col items-center justify-center text-center">
+                                    <i class="bi bi-image text-4xl text-slate-700 mb-4 group-hover:text-violet-500 transition-colors"></i>
+                                    <span class="text-slate-500 font-bold text-xs uppercase tracking-widest group-hover:text-violet-400">Upload Schematic</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/50 p-8 rounded-3xl border border-white/5 flex flex-col justify-center relative overflow-hidden">
+                        <div class="absolute top-6 right-6 bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-yellow-500/20">
+                            <i class="bi bi-cone-striped mr-1"></i> Under Development
+                        </div>
+
+                        <div class="w-16 h-16 bg-violet-600/10 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="bi bi-magic text-3xl text-violet-500"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-white mb-4 tracking-tighter">Generative Engine</h3>
+                        <p class="text-slate-400 text-sm mb-10 font-medium leading-relaxed">
+                            Our Gemini-powered reaction solver is currently being tuned for higher accuracy. <br><br>
+                            Please use the <strong>JSON Input</strong> tab to load manual data or run the built-in demo.
+                        </p>
+                        <button onclick="alert('AI Feature is under development. Please use JSON Input tab or Demo.')" class="w-full py-5 rounded-2xl font-black text-xl transition-all bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5">
+                            Generate Mechanism
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: JSON INPUT -->
+                <div id="content-json" class="hidden h-full flex flex-col">
+                    <textarea id="jsonInput" class="flex-1 w-full bg-[#05070a] p-8 text-emerald-400 mono-font text-xs resize-none outline-none border border-white/5 rounded-2xl mb-6 shadow-inner" spellcheck="false" placeholder="// Paste JSON Mechanism Data Here..."></textarea>
+                    <div class="flex justify-end gap-4">
+                        <button onclick="loadSampleToInput()" class="px-6 py-3 bg-white/5 text-slate-400 font-bold rounded-xl text-sm hover:text-white transition-colors border border-white/5">
+                            Load Sample Data
+                        </button>
+                        <button onclick="parseAndRender()" class="px-8 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg hover:shadow-violet-600/20 active:scale-95">
+                            <i class="bi bi-play-fill mr-1"></i> Render Engine
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // GEOMETRY ENGINE
+        // ============================================
+        class GeometryEngine {
+            static calculateStartPositions(molecule, width, height, offsetX = 0, offsetY = 0) {
+                const nodes = [];
+                const bondLen = 60;
+
+                if (molecule.atoms) {
+                    molecule.atoms.forEach((atom, i) => {
+                        let x, y;
+
+                        if (atom.coords) {
+                            x = width / 2 + atom.coords[0] + offsetX;
+                            y = height / 2 + atom.coords[1] + offsetY;
+                        } else {
+                            x = (width / 2 - (molecule.atoms.length * bondLen) / 2) + (i * bondLen * 0.8) + offsetX;
+                            y = (height / 2) + (i % 2 === 0 ? -20 : 20) + offsetY;
+                        }
+
+                        nodes.push({
+                            ...atom,
+                            molId: molecule.id,
+                            atomId: atom.id,
+                            id: `${molecule.id}.${atom.id}`,
+                            x: x,
+                            y: y
+                        });
+                    });
+                }
+                return nodes;
+            }
+        }
+
+        // ============================================
+        // CHEMICAL CANVAS CLASS
+        // ============================================
+        class ChemicalCanvas {
+            constructor(containerId, molecules, stepData) {
+                this.containerId = containerId;
+                this.molecules = molecules;
+                this.stepData = stepData;
+                this.width = document.getElementById(containerId).clientWidth;
+                this.height = document.getElementById(containerId).clientHeight;
+
+                this.svg = d3.select(`#${containerId}`).append("svg")
+                    .attr("width", "100%").attr("height", "100%")
+                    .attr("viewBox", [0, 0, this.width, this.height]);
+
+                this.container = this.svg.append("g");
+
+                const zoom = d3.zoom().scaleExtent([0.1, 4])
+                    .on("zoom", (e) => this.container.attr("transform", e.transform));
+                this.svg.call(zoom);
+
+                this.initSimulation();
+            }
+
+            initSimulation() {
+                this.nodes = [];
+                this.links = [];
+
+                const activeMols = [...this.stepData.reactants, ...this.stepData.products];
+
+                activeMols.forEach((molId, index) => {
+                    const mol = this.molecules.find(m => m.id === molId);
+                    if (!mol) return;
+
+                    const offsetX = (index - (activeMols.length - 1) / 2) * 250;
+                    const molNodes = GeometryEngine.calculateStartPositions(mol, this.width, this.height, offsetX, 0);
+                    this.nodes.push(...molNodes);
+
+                    if (mol.bonds) {
+                        mol.bonds.forEach(bond => {
+                            this.links.push({
+                                ...bond,
+                                source: `${mol.id}.${bond.from}`,
+                                target: `${mol.id}.${bond.to}`
+                            });
+                        });
+                    }
+                });
+
+                this.simulation = d3.forceSimulation(this.nodes)
+                    .force("link", d3.forceLink(this.links).id(d => d.id).distance(60).strength(0.8))
+                    .force("charge", d3.forceManyBody().strength(-400))
+                    .force("collide", d3.forceCollide(35).strength(1))
+                    .force("center", d3.forceCenter(this.width / 2, this.height / 2).strength(0.05))
+                    .alphaDecay(0.05);
+
+                this.render();
+                this.simulation.on("tick", () => this.ticked());
+            }
+
+            render() {
+                // Bonds
+                this.bondGroup = this.container.append("g");
+                this.bondSel = this.bondGroup.selectAll("line")
+                    .data(this.links).enter().append("line")
+                    .attr("class", d => {
+                        if (d.type === "double") return "bond-double";
+                        if (d.type === "aromatic") return "bond-aromatic";
+                        return "bond-line";
+                    });
+
+                // Atoms
+                this.atomGroup = this.container.append("g");
+                this.atomSel = this.atomGroup.selectAll("g")
+                    .data(this.nodes).enter().append("g")
+                    .attr("class", "atom-group")
+                    .call(d3.drag()
+                        .on("start", (e, d) => {
+                            if (!e.active) this.simulation.alphaTarget(0.3).restart();
+                            d.fx = d.x;
+                            d.fy = d.y;
+                        })
+                        .on("drag", (e, d) => {
+                            d.fx = e.x;
+                            d.fy = e.y;
+                        })
+                        .on("end", (e, d) => {
+                            if (!e.active) this.simulation.alphaTarget(0);
+                            d.fx = null;
+                            d.fy = null;
+                        }));
+
+                this.atomSel.append("circle")
+                    .attr("r", 20)
+                    .attr("class", "atom-bg");
+
+                this.atomSel.append("text")
+                    .attr("class", d => `atom-text el-${d.element}`)
+                    .attr("dy", "1px")
+                    .text(d => d.label || d.element);
+
+                // Arrows
+                if (this.stepData.arrows) {
+                    this.arrowGroup = this.container.append("g");
+                    this.arrowSel = this.arrowGroup.selectAll("path")
+                        .data(this.stepData.arrows).enter().append("path")
+                        .attr("class", "arrow-path");
+                }
+            }
+
+            ticked() {
+                this.bondSel
+                    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+
+                this.bondSel.filter(d => d.type === "double")
+                    .style("stroke-width", "4px");
+
+                this.atomSel.attr("transform", d => `translate(${d.x},${d.y})`);
+
+                if (this.arrowSel) {
+                    this.arrowSel.attr("d", d => {
+                        const s = this.nodes.find(n => n.molId === d.from.mol && n.atomId === d.from.atom);
+                        const e = this.nodes.find(n => n.molId === d.to.mol && n.atomId === d.to.atom);
+                        if (!s || !e) return "";
+
+                        const dx = e.x - s.x,
+                            dy = e.y - s.y;
+                        const midX = (s.x + e.x) / 2,
+                            midY = (s.y + e.y) / 2;
+                        const cpX = midX - dy * 0.3;
+                        const cpY = midY + dx * 0.3;
+
+                        return `M${s.x},${s.y} Q${cpX},${cpY} ${e.x},${e.y}`;
+                    });
+                }
+            }
+        }
+
+        // ============================================
+        // SAMPLE DATA - FRIEDEL-CRAFTS ACYLATION (5 STEPS)
+        // ============================================
+        const SAMPLE_DATA = {
+            "meta": {
+                "reactionName": "Friedel-Crafts Acylation: Benzene + Acetyl Chloride"
+            },
+            "molecules": [{
+                    "id": "benzene",
+                    "atoms": [{
+                            "id": "C1",
+                            "element": "C",
+                            "coords": [0, -60]
+                        },
+                        {
+                            "id": "C2",
+                            "element": "C",
+                            "coords": [52, -30]
+                        },
+                        {
+                            "id": "C3",
+                            "element": "C",
+                            "coords": [52, 30]
+                        },
+                        {
+                            "id": "C4",
+                            "element": "C",
+                            "coords": [0, 60]
+                        },
+                        {
+                            "id": "C5",
+                            "element": "C",
+                            "coords": [-52, 30]
+                        },
+                        {
+                            "id": "C6",
+                            "element": "C",
+                            "coords": [-52, -30]
+                        }
+                    ],
+                    "bonds": [{
+                            "from": "C1",
+                            "to": "C2",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C2",
+                            "to": "C3",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C3",
+                            "to": "C4",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C4",
+                            "to": "C5",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C5",
+                            "to": "C6",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C6",
+                            "to": "C1",
+                            "type": "aromatic"
+                        }
+                    ]
+                },
+                {
+                    "id": "acetyl_chloride",
+                    "atoms": [{
+                            "id": "C1",
+                            "element": "C",
+                            "label": "CH3",
+                            "coords": [-50, 0]
+                        },
+                        {
+                            "id": "C2",
+                            "element": "C",
+                            "coords": [0, 0]
+                        },
+                        {
+                            "id": "O",
+                            "element": "O",
+                            "coords": [0, -40]
+                        },
+                        {
+                            "id": "Cl",
+                            "element": "Cl",
+                            "coords": [50, 0]
+                        }
+                    ],
+                    "bonds": [{
+                            "from": "C1",
+                            "to": "C2",
+                            "type": "single"
+                        },
+                        {
+                            "from": "C2",
+                            "to": "O",
+                            "type": "double"
+                        },
+                        {
+                            "from": "C2",
+                            "to": "Cl",
+                            "type": "single"
+                        }
+                    ]
+                },
+                {
+                    "id": "catalyst",
+                    "atoms": [{
+                        "id": "Al",
+                        "element": "Al",
+                        "label": "AlCl3",
+                        "coords": [0, 0]
+                    }],
+                    "bonds": []
+                },
+                {
+                    "id": "acylium",
+                    "atoms": [{
+                            "id": "C1",
+                            "element": "C",
+                            "label": "CH3",
+                            "coords": [-50, 0]
+                        },
+                        {
+                            "id": "C2",
+                            "element": "C",
+                            "coords": [0, 0],
+                            "charge": 1
+                        },
+                        {
+                            "id": "O",
+                            "element": "O",
+                            "coords": [50, 0]
+                        }
+                    ],
+                    "bonds": [{
+                            "from": "C1",
+                            "to": "C2",
+                            "type": "single"
+                        },
+                        {
+                            "from": "C2",
+                            "to": "O",
+                            "type": "double"
+                        }
+                    ]
+                },
+                {
+                    "id": "intermediate",
+                    "atoms": [{
+                            "id": "C1",
+                            "element": "C",
+                            "coords": [0, -60]
+                        },
+                        {
+                            "id": "C2",
+                            "element": "C",
+                            "coords": [52, -30]
+                        },
+                        {
+                            "id": "C3",
+                            "element": "C",
+                            "coords": [52, 30]
+                        },
+                        {
+                            "id": "C4",
+                            "element": "C",
+                            "coords": [0, 60]
+                        },
+                        {
+                            "id": "C5",
+                            "element": "C",
+                            "coords": [-52, 30]
+                        },
+                        {
+                            "id": "C6",
+                            "element": "C",
+                            "coords": [-52, -30]
+                        },
+                        {
+                            "id": "Cac",
+                            "element": "C",
+                            "coords": [0, -100]
+                        },
+                        {
+                            "id": "O",
+                            "element": "O",
+                            "coords": [40, -120]
+                        },
+                        {
+                            "id": "CH3",
+                            "element": "C",
+                            "label": "CH3",
+                            "coords": [-40, -120]
+                        }
+                    ],
+                    "bonds": [{
+                            "from": "C1",
+                            "to": "C2",
+                            "type": "single"
+                        },
+                        {
+                            "from": "C2",
+                            "to": "C3",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C3",
+                            "to": "C4",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C4",
+                            "to": "C5",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C5",
+                            "to": "C6",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C6",
+                            "to": "C1",
+                            "type": "single"
+                        },
+                        {
+                            "from": "C1",
+                            "to": "Cac",
+                            "type": "single"
+                        },
+                        {
+                            "from": "Cac",
+                            "to": "O",
+                            "type": "double"
+                        },
+                        {
+                            "from": "Cac",
+                            "to": "CH3",
+                            "type": "single"
+                        }
+                    ]
+                },
+                {
+                    "id": "product",
+                    "atoms": [{
+                            "id": "C1",
+                            "element": "C",
+                            "coords": [0, -60]
+                        },
+                        {
+                            "id": "C2",
+                            "element": "C",
+                            "coords": [52, -30]
+                        },
+                        {
+                            "id": "C3",
+                            "element": "C",
+                            "coords": [52, 30]
+                        },
+                        {
+                            "id": "C4",
+                            "element": "C",
+                            "coords": [0, 60]
+                        },
+                        {
+                            "id": "C5",
+                            "element": "C",
+                            "coords": [-52, 30]
+                        },
+                        {
+                            "id": "C6",
+                            "element": "C",
+                            "coords": [-52, -30]
+                        },
+                        {
+                            "id": "Cac",
+                            "element": "C",
+                            "coords": [0, -100]
+                        },
+                        {
+                            "id": "O",
+                            "element": "O",
+                            "coords": [40, -120]
+                        },
+                        {
+                            "id": "CH3",
+                            "element": "C",
+                            "label": "CH3",
+                            "coords": [-40, -120]
+                        }
+                    ],
+                    "bonds": [{
+                            "from": "C1",
+                            "to": "C2",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C2",
+                            "to": "C3",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C3",
+                            "to": "C4",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C4",
+                            "to": "C5",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C5",
+                            "to": "C6",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C6",
+                            "to": "C1",
+                            "type": "aromatic"
+                        },
+                        {
+                            "from": "C1",
+                            "to": "Cac",
+                            "type": "single"
+                        },
+                        {
+                            "from": "Cac",
+                            "to": "O",
+                            "type": "double"
+                        },
+                        {
+                            "from": "Cac",
+                            "to": "CH3",
+                            "type": "single"
+                        }
+                    ]
+                },
+                {
+                    "id": "hcl",
+                    "atoms": [{
+                            "id": "H",
+                            "element": "H",
+                            "coords": [-20, 0]
+                        },
+                        {
+                            "id": "Cl",
+                            "element": "Cl",
+                            "coords": [20, 0]
+                        }
+                    ],
+                    "bonds": [{
+                        "from": "H",
+                        "to": "Cl",
+                        "type": "single"
+                    }]
+                }
+            ],
+            "steps": [{
+                    "stepType": "Starting Materials",
+                    "description": "Benzene ring (aromatic hexagon) and acetyl chloride as starting reactants with AlCl₃ catalyst.",
+                    "reactants": ["benzene", "acetyl_chloride", "catalyst"],
+                    "products": [],
+                    "arrows": []
+                },
+                {
+                    "stepType": "Catalyst Activation",
+                    "description": "AlCl₃ coordinates with acetyl chloride to form the acylium ion (CH₃CO⁺), a strong electrophile.",
+                    "reactants": ["acetyl_chloride", "catalyst"],
+                    "products": ["acylium"],
+                    "arrows": [{
+                        "from": {
+                            "mol": "acetyl_chloride",
+                            "atom": "Cl"
+                        },
+                        "to": {
+                            "mol": "catalyst",
+                            "atom": "Al"
+                        }
+                    }]
+                },
+                {
+                    "stepType": "Electrophilic Attack",
+                    "description": "The π electrons from the benzene ring attack the electrophilic carbon of the acylium ion.",
+                    "reactants": ["benzene", "acylium"],
+                    "products": ["intermediate"],
+                    "arrows": [{
+                        "from": {
+                            "mol": "benzene",
+                            "atom": "C1"
+                        },
+                        "to": {
+                            "mol": "acylium",
+                            "atom": "C2"
+                        }
+                    }]
+                },
+                {
+                    "stepType": "Deprotonation",
+                    "description": "A base removes the proton from the intermediate, restoring aromaticity of the benzene ring.",
+                    "reactants": ["intermediate"],
+                    "products": ["product", "hcl"],
+                    "arrows": []
+                },
+                {
+                    "stepType": "Final Product",
+                    "description": "Acetophenone is formed with restored aromatic benzene ring. HCl is the byproduct.",
+                    "reactants": [],
+                    "products": ["product", "hcl"],
+                    "arrows": []
+                }
+            ]
+        };
+
+        // ============================================
+        // UI FUNCTIONS
+        // ============================================
+        function toggleModal(id, show) {
+            const el = document.getElementById(id);
+            show ? el.classList.remove('hidden') : el.classList.add('hidden');
+        }
+
+        function openStudio() {
+            toggleModal('modal-studio', true);
+        }
+
+        function switchTab(tab) {
+            const aiBtn = document.getElementById('tab-ai');
+            const jsonBtn = document.getElementById('tab-json');
+            const aiContent = document.getElementById('content-ai');
+            const jsonContent = document.getElementById('content-json');
+
+            if (tab === 'ai') {
+                aiBtn.className = "text-sm font-bold uppercase tracking-widest text-violet-500 border-b-2 border-violet-500 pb-1 transition-all";
+                jsonBtn.className = "text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all pb-1";
+                aiContent.classList.remove('hidden');
+                jsonContent.classList.add('hidden');
+            } else {
+                jsonBtn.className = "text-sm font-bold uppercase tracking-widest text-violet-500 border-b-2 border-violet-500 pb-1 transition-all";
+                aiBtn.className = "text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-white transition-all pb-1";
+                jsonContent.classList.remove('hidden');
+                aiContent.classList.add('hidden');
+            }
+        }
+
+        function loadSampleToInput() {
+            document.getElementById('jsonInput').value = JSON.stringify(SAMPLE_DATA, null, 2);
+        }
+
+        function loadSample() {
+            renderData(SAMPLE_DATA);
+        }
+
+        function parseAndRender() {
+            try {
+                const data = JSON.parse(document.getElementById('jsonInput').value);
+                renderData(data);
+                toggleModal('modal-studio', false);
+            } catch (e) {
+                alert("Invalid JSON format: " + e.message);
+            }
+        }
+
+        function renderData(data) {
+            document.getElementById('view-hero').classList.add('hidden');
+            document.getElementById('view-results').classList.remove('hidden');
+            document.getElementById('reaction-title').textContent = data.meta.reactionName;
+
+            const container = document.getElementById('steps-container');
+            container.innerHTML = '';
+
+            data.steps.forEach((step, index) => {
+                const id = `canvas-${index}`;
+                const el = document.createElement('div');
+                el.className = "glass-card rounded-[2rem] p-8";
+                el.innerHTML = `
+                    <div class="mb-6 border-b border-white/5 pb-4">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-violet-400 font-mono text-xs font-bold uppercase">Step 0${index + 1}</span>
+                            <h2 class="text-2xl font-bold text-white">${step.stepType}</h2>
+                        </div>
+                        <p class="text-slate-400 text-sm max-w-2xl">${step.description || ''}</p>
+                    </div>
+                    <div id="${id}" class="w-full h-[500px] bg-[#020305] rounded-2xl border border-white/5 relative overflow-hidden shadow-inner">
+                        <div class="absolute bottom-4 left-4 text-[10px] font-mono text-slate-700 uppercase tracking-widest pointer-events-none">ChemEngine v3 • Physics Active • Benzene Ring</div>
+                    </div>
+                `;
+                container.appendChild(el);
+
+                setTimeout(() => new ChemicalCanvas(id, data.molecules, step), 100);
+            });
+        }
+    </script>
+</body>
+
+</html>
