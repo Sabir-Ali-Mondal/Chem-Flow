@@ -270,11 +270,8 @@
     <header>
         <div class="brand">Chem <span>Flow</span> <small style="font-size: 0.6em; color: #94a3b8;">by S.A.M.</small></div>
         <div>
-            <button class="btn bg-success" onclick="openModal()">
+            <button class="btn bg-warning" onclick="openModal()">
                 <i class="bi bi-database"></i> Studio
-            </button>
-            <button class="btn btn-primary" onclick="loadComplexDemo()">
-                <i class="bi bi-play-circle"></i> Demo
             </button>
         </div>
     </header>
@@ -876,27 +873,63 @@ OUTPUT ONLY THE JSON - NO OTHER TEXT
 
             render(data) {
                 const enrichedData = this.layoutResolver.resolve(data);
-                const stepHeight = 450;
-                const totalH = Math.max(1000, enrichedData.steps.length * stepHeight + 100);
+
+                const stepBounds = [];
+                enrichedData.steps.forEach(step => {
+                    let minY = Infinity,
+                        maxY = -Infinity;
+
+                    step.reactants.forEach(mol => {
+                        mol.atoms.forEach(a => {
+                            if (a.y < minY) minY = a.y;
+                            if (a.y > maxY) maxY = a.y;
+                        });
+                    });
+
+                    step.products.forEach(mol => {
+                        mol.atoms.forEach(a => {
+                            if (a.y < minY) minY = a.y;
+                            if (a.y > maxY) maxY = a.y;
+                        });
+                    });
+
+                    const gridHeight = maxY - minY;
+                    const pixelHeight = gridHeight * this.scale;
+                    const totalPadding = 180;
+
+                    stepBounds.push({
+                        minY: minY,
+                        maxY: maxY,
+                        gridHeight: gridHeight,
+                        pixelHeight: pixelHeight,
+                        totalHeight: Math.max(350, pixelHeight + totalPadding)
+                    });
+                });
+
+                const totalH = stepBounds.reduce((sum, b) => sum + b.totalHeight, 0) + 100;
                 this.initSVG(2500, totalH);
 
                 const labelColWidth = 120;
                 let cursorY = 80;
 
                 enrichedData.steps.forEach((step, i) => {
+                    const stepInfo = stepBounds[i];
+                    const verticalOffset = (stepInfo.totalHeight - stepInfo.pixelHeight) / 2;
+                    const adjustedCursorY = cursorY + verticalOffset;
+
                     this.drawText(`STEP ${i+1}`, 40, cursorY, "label-text");
-                    this.drawDivider(labelColWidth, cursorY - 20, labelColWidth, cursorY + stepHeight - 60);
+                    this.drawDivider(labelColWidth, cursorY - 20, labelColWidth, cursorY + stepInfo.totalHeight - 60);
 
                     let cursorX = labelColWidth + 20;
                     const moleculeBounds = {};
 
                     step.reactants.forEach(mol => {
-                        const bounds = this.drawMolecule(mol, cursorX, cursorY);
+                        const bounds = this.drawMolecule(mol, cursorX, adjustedCursorY);
                         moleculeBounds[mol.id] = bounds;
                         cursorX += (bounds.width / this.scale) * this.scale + 60;
                     });
 
-                    this.drawReactionArrow(cursorX, cursorY, step.arrow);
+                    this.drawReactionArrow(cursorX, adjustedCursorY, step.arrow);
 
                     if (step.mechanism) {
                         step.mechanism.forEach(m => this.drawMechArrow(m));
@@ -905,7 +938,7 @@ OUTPUT ONLY THE JSON - NO OTHER TEXT
                     cursorX += 120;
 
                     step.products.forEach(mol => {
-                        const bounds = this.drawMolecule(mol, cursorX, cursorY);
+                        const bounds = this.drawMolecule(mol, cursorX, adjustedCursorY);
                         moleculeBounds[mol.id] = bounds;
                         cursorX += (bounds.width / this.scale) * this.scale + 60;
                     });
@@ -915,7 +948,7 @@ OUTPUT ONLY THE JSON - NO OTHER TEXT
                             if (b.targets) {
                                 this.drawDynamicBracket(b, moleculeBounds);
                             } else if (b.rect) {
-                                this.drawBracket(b, labelColWidth + 20, cursorY);
+                                this.drawBracket(b, labelColWidth + 20, adjustedCursorY);
                             }
                         });
                     }
@@ -924,7 +957,7 @@ OUTPUT ONLY THE JSON - NO OTHER TEXT
                         this.drawAnnotationBox(step.annotation, cursorX + 20, cursorY - 60);
                     }
 
-                    cursorY += stepHeight;
+                    cursorY += stepInfo.totalHeight;
                 });
             }
 
@@ -1901,7 +1934,101 @@ OUTPUT ONLY THE JSON - NO OTHER TEXT
                 setTimeout(() => toast.remove(), 300);
             }, duration);
         }
+        (function initFullscreenControl() {
+            // 1. Define the CSS styles
+            const css = `
+        #cf-fullscreen-btn {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            background-color: rgba(15, 23, 42, 0.8); /* Slate-900 with opacity */
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0;
+            outline: none;
+            color: #fff;
+        }
 
+        /* Hover effect */
+        #cf-fullscreen-btn:hover {
+            transform: scale(1.1);
+            background-color: rgba(15, 23, 42, 1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Click/Active effect */
+        #cf-fullscreen-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* SVG Icon styling */
+        #cf-fullscreen-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            pointer-events: none;
+        }
+
+        /* Hide on small screens (< 500px) */
+        @media (max-width: 499px) {
+            #cf-fullscreen-btn { display: none !important; }
+        }
+    `;
+
+            // 2. Inject CSS into head
+            const style = document.createElement('style');
+            style.appendChild(document.createTextNode(css));
+            document.head.appendChild(style);
+
+            // 3. Create the Button
+            const btn = document.createElement('button');
+            btn.id = 'cf-fullscreen-btn';
+            btn.setAttribute('aria-label', 'Toggle Fullscreen');
+            btn.title = "Toggle Fullscreen";
+
+            // Icons (Material Design)
+            const iconEnter = '<svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>';
+            const iconExit = '<svg viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>';
+
+            // Set initial icon
+            btn.innerHTML = iconEnter;
+
+            // 4. Toggle Logic
+            const toggleFullscreen = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            };
+
+            // 5. Update icon based on state (handles ESC key press too)
+            const updateIcon = () => {
+                btn.innerHTML = document.fullscreenElement ? iconExit : iconEnter;
+            };
+
+            // 6. Add Event Listeners
+            btn.addEventListener('click', toggleFullscreen);
+            document.addEventListener('fullscreenchange', updateIcon);
+
+            // 7. Append to DOM
+            document.body.appendChild(btn);
+
+        })();
         // Load demo on page load
         window.addEventListener('DOMContentLoaded', () => {
             loadComplexDemo();
