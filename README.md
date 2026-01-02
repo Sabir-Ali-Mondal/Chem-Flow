@@ -7,3 +7,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 An interactive, AI-powered web application for visualizing complex chemical reaction mechanisms. This tool streamlines the process of learning and teaching chemistry by converting natural language topics into dynamic, narrated animations.
+
+## 🧪 Chemical Reaction Mechanism Demo
+
+![Chemical Reaction Mechanism Demo](https://github.com/Sabir-Ali-Mondal/Chemical-Reaction-Mechanism/blob/main/Recording.gif?raw=true)
