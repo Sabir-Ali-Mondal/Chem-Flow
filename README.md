@@ -1,4 +1,4 @@
-# Chemical-Reaction-Mechanism
+# Chem Flow
 
 ## AI Chemistry Visualizer step by step mechanism
 
