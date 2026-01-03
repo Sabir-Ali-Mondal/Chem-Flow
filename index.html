@@ -4,13 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChemFlow - Mechanism Designer</title>
+    <title>ChemFlow</title>
 
-    <!-- UI Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
-    <!-- HTML2CANVAS for Full-Height Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -35,7 +33,6 @@
             overflow: hidden;
         }
 
-        /* PREMIUM SLATE SCROLLBARS */
         ::-webkit-scrollbar {
             width: 12px;
             height: 16px;
@@ -65,7 +62,6 @@
             background-color: #64748b;
         }
 
-        /* HEADER */
         header {
             height: 64px;
             background: var(--surface);
@@ -89,7 +85,6 @@
             color: var(--primary);
         }
 
-        /* STAGE */
         .stage {
             flex: 1;
             position: relative;
@@ -103,11 +98,13 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-            background-size: 30px 30px;
+            background-color: #ffffff;
+            background-image:
+                linear-gradient(rgba(226, 232, 240, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(226, 232, 240, 0.5) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
-        /* SVG Styles */
         .chem-svg {
             display: block;
         }
@@ -131,7 +128,6 @@
             stroke-linejoin: round;
         }
 
-        /* MODAL STYLES */
         .modal-content {
             border: none;
             border-radius: 20px;
@@ -244,15 +240,10 @@
             }
         }
     </style>
-
-    <script type="importmap">
-        { "imports": { "@google/genai": "https://esm.sh/@google/genai@^1.34.0" } }
-    </script>
 </head>
 
 <body>
 
-    <!-- INTRO ANIMATION -->
     <div id="chemflow-intro-loader">
         <style>
             #chemflow-intro-loader {
@@ -430,7 +421,6 @@
         </script>
     </div>
 
-    <!-- MAIN APP HEADER -->
     <header>
         <div class="brand">Chem<span>Flow</span> <small class="text-slate-400 font-normal text-xs ml-2">by S.A.M</small></div>
         <div class="flex gap-2">
@@ -443,14 +433,12 @@
         </div>
     </header>
 
-    <!-- CANVAS STAGE -->
     <main class="stage">
         <div class="scroll-area" id="canvas-container"></div>
     </main>
 
     <div id="toastContainer" class="toast-container"></div>
 
-    <!-- MAIN MODAL -->
     <div class="modal fade" id="dataModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
@@ -479,7 +467,6 @@
                     </ul>
 
                     <div class="tab-content p-4">
-                        <!-- AI VISION PANEL -->
                         <div class="tab-pane fade show active" id="ai-panel">
                             <div class="row g-4">
                                 <div class="col-lg-7">
@@ -512,7 +499,7 @@
                                 <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100 flex items-center justify-between">
                                     <div class="text-xs text-amber-800 leading-relaxed mb-0">
                                         <i class="bi bi-info-circle-fill me-1"></i>
-                                        <b>Manual</b>
+                                        <b>System Prompt Auto-Generated</b>
                                     </div>
                                     <button onclick="copySystemPrompt()" class="btn btn-sm bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 shadow-sm text-xs font-bold py-1 px-2 rounded">
                                         <i class="bi bi-clipboard-check me-1"></i> Copy Prompt
@@ -522,7 +509,6 @@
                             </div>
                         </div>
 
-                        <!-- JSON ENGINE PANEL -->
                         <div class="tab-pane fade" id="json-panel">
                             <div class="relative">
                                 <textarea class="code-editor" id="jsonInput"></textarea>
@@ -540,8 +526,8 @@
                                 </div>
                             </div>
                             <div class="flex justify-between mt-4">
-                                <button class="btn btn-outline-secondary px-4" onclick="loadComplexDemo()">
-                                    Load Sample
+                                <button class="btn btn-outline-secondary px-4" onclick="loadFullDemo()">
+                                    Load FULL Demo
                                 </button>
                                 <button class="btn bg-amber-500 hover:bg-amber-600 text-white px-5 font-bold shadow-lg" onclick="parseAndRender()">
                                     <i class="bi bi-play-circle-fill me-2"></i> RUN ENGINE
@@ -554,7 +540,9 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
@@ -564,144 +552,314 @@
         let abortController = null;
         const modal = new bootstrap.Modal(document.getElementById('dataModal'));
 
-        // === FULL POWER SYSTEM PROMPT (Restored) ===
-        const SYSTEM_PROMPT = `You are the **ChemFlow Ultimate JSON Architect**. Your mission: convert chemical mechanism descriptions/images into perfect, error-free JSON.
+        const DEMO_JSON = {
+            "title": "ChemFlow COMPLETE Capability Showcase",
+            "steps": [{
+                    "annotation": "<b>Feature Demo 1</b><br>Radicals + Orbitals + Fishhook",
+                    "reactants": [{
+                        "id": "mol_radical",
+                        "atoms": [{
+                                "id": "c1",
+                                "symbol": "C",
+                                "partialCharge": "+",
+                                "x": 0,
+                                "y": 0
+                            },
+                            {
+                                "id": "h1",
+                                "symbol": "H",
+                                "x": 0,
+                                "y": -1
+                            },
+                            {
+                                "id": "h2",
+                                "symbol": "H",
+                                "x": -0.8,
+                                "y": 0.5
+                            },
+                            {
+                                "id": "h3",
+                                "symbol": "H",
+                                "x": 0.8,
+                                "y": 0.5
+                            },
+                            {
+                                "id": "cl1",
+                                "symbol": "Cl",
+                                "radical": true,
+                                "lonePairs": 3,
+                                "color": "#16a34a",
+                                "x": 2,
+                                "y": 0
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "c1",
+                                "to": "h1",
+                                "type": "single"
+                            },
+                            {
+                                "from": "c1",
+                                "to": "h2",
+                                "type": "wedge"
+                            },
+                            {
+                                "from": "c1",
+                                "to": "h3",
+                                "type": "dash"
+                            },
+                            {
+                                "from": "c1",
+                                "to": "cl1",
+                                "type": "single",
+                                "style": "dotted"
+                            }
+                        ]
+                    }],
+                    "orbitals": [{
+                            "atomId": "c1",
+                            "type": "p",
+                            "angle": 0,
+                            "color": "rgba(255,100,100,0.3)"
+                        },
+                        {
+                            "atomId": "cl1",
+                            "type": "p",
+                            "angle": 180,
+                            "color": "rgba(100,255,100,0.3)"
+                        }
+                    ],
+                    "arrow": {
+                        "type": "forward",
+                        "text_above": "h\\nu",
+                        "text_below": "heat"
+                    },
+                    "mechanism": [{
+                        "from": "c1",
+                        "to": "cl1",
+                        "type": "fishhook",
+                        "color": "#ef4444",
+                        "curve": -30
+                    }],
+                    "products": [{
+                        "id": "mol_methyl",
+                        "atoms": [{
+                                "id": "c2",
+                                "symbol": "C",
+                                "radical": true
+                            },
+                            {
+                                "id": "h4",
+                                "symbol": "H"
+                            },
+                            {
+                                "id": "h5",
+                                "symbol": "H"
+                            },
+                            {
+                                "id": "h6",
+                                "symbol": "H"
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "c2",
+                                "to": "h4",
+                                "type": "single"
+                            },
+                            {
+                                "from": "c2",
+                                "to": "h5",
+                                "type": "single"
+                            },
+                            {
+                                "from": "c2",
+                                "to": "h6",
+                                "type": "single"
+                            }
+                        ]
+                    }]
+                },
+                {
+                    "annotation": "<b>Feature Demo 2</b><br>Rich Text + All Bond Types",
+                    "reactants": [{
+                        "id": "mol_rich",
+                        "atoms": [{
+                                "id": "r1",
+                                "symbol": "H_{2}O"
+                            },
+                            {
+                                "id": "r2",
+                                "symbol": "M^{2+}",
+                                "color": "#8b5cf6"
+                            },
+                            {
+                                "id": "r3",
+                                "symbol": "C_{\\alpha}",
+                                "charge": "+"
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "r1",
+                                "to": "r2",
+                                "type": "single"
+                            },
+                            {
+                                "from": "r2",
+                                "to": "r3",
+                                "type": "double"
+                            }
+                        ]
+                    }],
+                    "arrow": {
+                        "type": "resonance"
+                    },
+                    "products": [{
+                        "id": "mol_wavy",
+                        "atoms": [{
+                                "id": "w1",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "w2",
+                                "symbol": "C"
+                            }
+                        ],
+                        "bonds": [{
+                            "from": "w1",
+                            "to": "w2",
+                            "type": "wavy"
+                        }]
+                    }]
+                },
+                {
+                    "annotation": "<b>Feature Demo 3</b><br>Benzene Ring + Transition State",
+                    "reactants": [{
+                        "id": "benzene",
+                        "atoms": [{
+                                "id": "b1",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b2",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b3",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b4",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b5",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b6",
+                                "symbol": "C"
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "b1",
+                                "to": "b2",
+                                "type": "double"
+                            },
+                            {
+                                "from": "b2",
+                                "to": "b3",
+                                "type": "single"
+                            },
+                            {
+                                "from": "b3",
+                                "to": "b4",
+                                "type": "double"
+                            },
+                            {
+                                "from": "b4",
+                                "to": "b5",
+                                "type": "single"
+                            },
+                            {
+                                "from": "b5",
+                                "to": "b6",
+                                "type": "double"
+                            },
+                            {
+                                "from": "b6",
+                                "to": "b1",
+                                "type": "single"
+                            }
+                        ]
+                    }],
+                    "brackets": [{
+                        "targets": ["benzene"],
+                        "label": "‡"
+                    }],
+                    "arrow": {
+                        "type": "retro"
+                    },
+                    "products": []
+                }
+            ]
+        };
 
-═══════════════════════════════════════════════════════════════════════════════
-CRITICAL OUTPUT RULES (MUST FOLLOW)
-═══════════════════════════════════════════════════════════════════════════════
-1. OUTPUT ONLY VALID JSON inside markdown block (json). NO conversational text.
-2. **ID INTEGRITY**: Every molecule and atom MUST have a unique string "id". Mechanism arrows MUST reference these exact IDs.
-3. **AUTO-LAYOUT**: OMIT "x" and "y" for standard chains. Only use them for fixed geometry.
-MUST: 
-   • In first step add the question similer thing no need of mechanishm . 
-   • And in last step add final products no need need of mechanishm. 
-   • And others steps inside these should be show each and every detail of mechanishm also try to take mediators as chemical if they are also reacting.
+        function generateSystemPrompt() {
+            const demoString = JSON.stringify(DEMO_JSON, null, 2);
+            return `You are ChemFlow JSON Architect. Convert chemical mechanisms into valid JSON.
 
-═══════════════════════════════════════════════════════════════════════════════
-FULL CAPABILITY REFERENCE (USE THESE FEATURES)
-═══════════════════════════════════════════════════════════════════════════════
+OUTPUT RULES:
+1. Return ONLY valid JSON in markdown json block.
+2. Every molecule and atom must have unique "id" string.
+3. Omit "x" and "y" for auto-layout unless fixed geometry required.
 
-1. BOND TYPES (property: "type"):
-   - "single" : Standard bond
-   - "double" : Double bond (alkenes, carbonyls)
-   - "triple" : Triple bond (alkynes, nitriles)
-   - "wedge"  : Stereochemistry OUT (solid wedge)
-   - "dash"   : Stereochemistry IN (dashed line)
-   - "wavy"   : Unknown stereochemistry
+STRUCTURE REQUIREMENTS - MUST FOLLOW:
+• FIRST STEP: Show the question starting materials without mechanism arrows. Use reaction arrow only.
+• MIDDLE STEPS: Show each and every mechanistic detail with curved arrows, electron movement, intermediates. Include mediators and catalysts as chemical structures if they react.
+• LAST STEP: Show final products only without mechanism arrows. Use reaction arrow only.
 
-2. ATOM PROPERTIES:
-   - "symbol"   : Element (C, N, O, etc.) or Group (CH3, Ph). Subscripts are auto-formatted.
-   - "charge"   : "+" (Blue), "-" (Red), "+2", "-2".
-   - "isotope"  : "13" (for 13C), "2" (for Deuterium).
-   - "lonePairs": Integer 0-4 (renders dots).
-   - "color"    : Hex string (e.g. "#ef4444").
+FULL CAPABILITIES - USE ANY AS NEEDED:
 
-3. ARROW TYPES (property: "type"):
-   - "forward"   : Reaction progress ->
-   - "eq"        : Equilibrium <->
-   - "resonance" : Resonance <->
-   - "retro"     : Retrosynthetic =>
+BONDS:
+- "type": "single" | "double" | "triple" | "wedge" | "dash" | "wavy"
+- "style": "dotted" for H-bonds/TS | "bold" for emphasis
 
-4. DYNAMIC BRACKETS (for Transition States):
-   - Use "targets": ["mol_id1", "mol_id2"] to auto-wrap molecules.
-   - "label": "‡" or "TS".
+ATOMS:
+- "symbol": Element or Group like CH3, Ph, Et
+- "charge": "+" | "-" | "+2" | "-2" renders colored circles
+- "partialCharge": "+" | "-" renders delta symbols
+- "radical": true renders single electron dot
+- "lonePairs": 0-4 renders electron pairs
+- "isotope": "13" | "2" for isotope labels
+- "color": hex code for custom coloring
+- Rich Text: "H_{2}O" subscript | "M^{2+}" superscript | "C_{\\alpha}" Greek
 
-5. COLOR PALETTE (Use for Clarity):
-   - Oxygen/Electrophiles: "#ef4444" (Red)
-   - Nitrogen/Nucleophiles: "#3b82f6" (Blue)
-   - Leaving Groups: "#b91c1c" (Dark Red)
-   - Carbocations: "#2563eb" (Bright Blue)
-   - Mechanism Arrows: "#3b82f6" (Blue default) or "#ef4444" (Red for bond breaking).
+REACTION ARROWS:
+- "type": "forward" | "eq" | "resonance" | "retro"
+- "text_above": reagents or conditions
+- "text_below": additional conditions like heat, hν
 
-═══════════════════════════════════════════════════════════════════════════════
-FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
-═══════════════════════════════════════════════════════════════════════════════
-{
-  "title": "Benzene Mechanism Stress Test",
-  "steps": [
-    {
-      "annotation": "<b>Step 1</b><br>Electrophile generation (Equilibrium)",
-      "reactants": [
-        {
-          "id": "mol_hno3",
-          "atoms": [
-            { "id": "hno3_n", "symbol": "N", "charge": "+", "color": "#3b82f6" },
-            { "id": "hno3_o1", "symbol": "O", "lonePairs": 2, "color": "#ef4444" },
-            { "id": "hno3_o2", "symbol": "O", "lonePairs": 2, "color": "#ef4444" },
-            { "id": "hno3_o3", "symbol": "O", "charge": "-", "lonePairs": 3, "color": "#ef4444" }
-          ],
-          "bonds": [
-            { "from": "hno3_n", "to": "hno3_o1", "type": "double" },
-            { "from": "hno3_n", "to": "hno3_o2", "type": "single" },
-            { "from": "hno3_n", "to": "hno3_o3", "type": "single" }
-          ]
+MECHANISM ARROWS:
+- "type": "curved" default 2-electron | "fishhook" for 1-electron radicals
+- "curve": -40 to +40 controls arc height
+- "color": hex for custom color
+- "from": atom_id, "to": atom_id
+
+ORBITALS:
+- "orbitals" array with "atomId", "type": "p" | "sp3", "angle": degrees, "color": rgba
+
+BRACKETS:
+- "brackets" array with "targets": ["mol_id"], "label": "‡" or custom
+
+ANNOTATIONS:
+- "annotation": supports HTML like <b>, <br>
+
+EXAMPLE STRUCTURE:
+${demoString}`;
         }
-      ],
-      "arrow": { "type": "eq", "text_above": "H2SO4" },
-      "products": [
-        {
-          "id": "mol_no2plus",
-          "atoms": [
-            { "id": "no2_n", "symbol": "N", "charge": "+", "color": "#3b82f6" },
-            { "id": "no2_o1", "symbol": "O", "lonePairs": 2, "color": "#ef4444" },
-            { "id": "no2_o2", "symbol": "O", "lonePairs": 2, "color": "#ef4444" }
-          ],
-          "bonds": [
-            { "from": "no2_n", "to": "no2_o1", "type": "double" },
-            { "from": "no2_n", "to": "no2_o2", "type": "double" }
-          ]
-        }
-      ]
-    },
-    {
-      "annotation": "<b>Step 2</b><br>Electrophilic attack on benzene",
-      "reactants": [
-        {
-          "id": "mol_benzene",
-          "atoms": [
-            { "id": "c1", "symbol": "C" },
-            { "id": "c2", "symbol": "C" },
-            { "id": "c3", "symbol": "C" },
-            { "id": "c4", "symbol": "C" },
-            { "id": "c5", "symbol": "C" },
-            { "id": "c6", "symbol": "C" }
-          ],
-          "bonds": [
-            { "from": "c1", "to": "c2", "type": "double" },
-            { "from": "c2", "to": "c3", "type": "single" },
-            { "from": "c3", "to": "c4", "type": "double" },
-            { "from": "c4", "to": "c5", "type": "single" },
-            { "from": "c5", "to": "c6", "type": "double" },
-            { "from": "c6", "to": "c1", "type": "single" }
-          ]
-        },
-        {
-          "id": "mol_no2plus_step2",
-          "atoms": [
-            { "id": "no2p_n", "symbol": "N", "charge": "+", "color": "#3b82f6" },
-            { "id": "no2p_o1", "symbol": "O", "lonePairs": 2, "color": "#ef4444" },
-            { "id": "no2p_o2", "symbol": "O", "lonePairs": 2, "color": "#ef4444" }
-          ],
-          "bonds": [
-            { "from": "no2p_n", "to": "no2p_o1", "type": "double" },
-            { "from": "no2p_n", "to": "no2p_o2", "type": "double" }
-          ]
-        }
-      ],
-      "arrow": { "type": "forward" },
-      "mechanism": [
-        { "from": "c1", "to": "no2p_n", "curve": -40, "color": "#3b82f6" }
-      ],
-      "brackets": [
-        { "targets": ["mol_benzene"], "label": "‡" }
-      ],
-      "products": []
-    }
-  ]
-}`;
 
-        // === CLEAN JSON FUNCTION (Aggressive) ===
+        const SYSTEM_PROMPT = generateSystemPrompt();
+
         function cleanJSON(text) {
             let cleaned = text.replace(/```json/g, "").replace(/```/g, "");
             const firstBrace = cleaned.indexOf('{');
@@ -712,7 +870,6 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
             return cleaned.trim();
         }
 
-        // === AI LOGIC ===
         const fileInput = document.getElementById('fileInput');
         const cropBox = document.getElementById('cropBox');
         const imageToCrop = document.getElementById('imageToCrop');
@@ -757,7 +914,7 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
         }
 
         function copySystemPrompt() {
-            navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => notify("Full System Prompt copied!", "success"))
+            navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => notify("System Prompt copied!", "success"))
                 .catch(() => notify("Failed to copy.", "error"));
         }
 
@@ -791,11 +948,10 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     signal: abortController.signal
                 });
 
-                if (!response.ok) throw new Error(await response.text());
+                if (!response.ok) throw new Error("Server not responding");
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+                if (data.error) throw new Error("AI processing failed");
 
-                // USE THE NEW CLEANER HERE
                 const rawText = data.text || "";
                 const validJSON = cleanJSON(rawText);
 
@@ -805,17 +961,13 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 notify("AI generated mechanism successfully!", "success");
             } catch (err) {
                 if (err.name === 'AbortError') return;
-                console.error(err);
-                notify("AI failed: " + err.message, "error");
+                notify("Server not connected or AI not responding", "error");
             } finally {
                 loading.style.display = 'none';
                 abortController = null;
             }
         }
 
-        // ==========================================
-        // LAYOUT RESOLVER (RING DETECTION)
-        // ==========================================
         class LayoutResolver {
             constructor(scale) {
                 this.scale = scale;
@@ -899,9 +1051,6 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
             }
         }
 
-        // ==========================================
-        // CHEM ENGINE
-        // ==========================================
         class ChemEngine {
             constructor(containerId) {
                 this.container = document.getElementById(containerId);
@@ -928,18 +1077,80 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 if (document.getElementById(id)) return `url(#${id})`;
                 const m = document.createElementNS(NS, "marker");
                 m.setAttribute("id", id);
-                m.setAttribute("markerWidth", "10");
-                m.setAttribute("markerHeight", "10");
-                m.setAttribute("refX", "8");
+                m.setAttribute("markerWidth", "12");
+                m.setAttribute("markerHeight", "12");
+                m.setAttribute("refX", "6");
                 m.setAttribute("refY", "4");
                 m.setAttribute("orient", "auto");
                 const p = document.createElementNS(NS, "path");
-                p.setAttribute("d", "M0,0 L10,4 L0,8 L2,4 Z");
+                p.setAttribute("d", "M0,0 L8,4 L0,8 Z");
                 p.setAttribute("fill", color);
                 m.appendChild(p);
                 this.defs.appendChild(m);
                 return `url(#${id})`;
             }
+
+            drawRichText(g, text, x, y, options = {}) {
+                const fontSize = options.fontSize || 16;
+                const color = options.color || "#1e293b";
+
+                const greek = {
+                    "\\delta": "δ",
+                    "\\alpha": "α",
+                    "\\beta": "β",
+                    "\\pi": "π",
+                    "\\sigma": "σ",
+                    "\\nu": "ν"
+                };
+                const parts = text.split(/(_\{[^}]+\}|\^\{[^}]+\}|_\S|\^\S|\\[a-zA-Z]+)/g).filter(Boolean);
+
+                let cursorX = x;
+                if (parts.length === 1 && !greek[parts[0]]) {
+                    const t = document.createElementNS(NS, "text");
+                    t.textContent = text;
+                    t.setAttribute("x", x);
+                    t.setAttribute("y", y);
+                    t.setAttribute("fill", color);
+                    t.setAttribute("font-size", fontSize);
+                    if (options.anchor) t.setAttribute("text-anchor", options.anchor);
+                    g.appendChild(t);
+                    return;
+                }
+
+                const group = document.createElementNS(NS, "g");
+                if (options.anchor === "middle") {
+                    cursorX -= (parts.length * fontSize * 0.3);
+                }
+
+                parts.forEach(part => {
+                    let drawText = part;
+                    let yOffset = 0;
+                    let currentSize = fontSize;
+
+                    if (greek[part]) drawText = greek[part];
+                    else if (part.startsWith("_")) {
+                        drawText = part.replace(/_\{?|\}?/g, "");
+                        currentSize = fontSize * 0.7;
+                        yOffset = fontSize * 0.3;
+                    } else if (part.startsWith("^")) {
+                        drawText = part.replace(/\^\{?|\}?/g, "");
+                        currentSize = fontSize * 0.7;
+                        yOffset = -fontSize * 0.4;
+                    }
+
+                    const t = document.createElementNS(NS, "text");
+                    t.textContent = drawText;
+                    t.setAttribute("x", cursorX);
+                    t.setAttribute("y", y + yOffset);
+                    t.setAttribute("fill", color);
+                    t.setAttribute("font-size", currentSize);
+                    group.appendChild(t);
+
+                    cursorX += (currentSize * 0.6 * drawText.length);
+                });
+                g.appendChild(group);
+            }
+
             render(data) {
                 const enrichedData = this.layoutResolver.resolve(data);
                 this.atomReg = {};
@@ -1013,9 +1224,10 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     line.setAttribute("stroke-width", "2");
                     this.layerMain.appendChild(line);
                 }
+
                 let cursorX = 150;
                 (step.reactants || []).forEach(mol => {
-                    const b = this.drawMolecule(mol, cursorX, originY);
+                    const b = this.drawMolecule(mol, cursorX, originY, step.orbitals);
                     this.moleculeBounds[mol.id] = b;
                     cursorX += b.w + 60;
                 });
@@ -1025,7 +1237,7 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 });
                 cursorX += 120;
                 (step.products || []).forEach(mol => {
-                    const b = this.drawMolecule(mol, cursorX, originY);
+                    const b = this.drawMolecule(mol, cursorX, originY, step.orbitals);
                     this.moleculeBounds[mol.id] = b;
                     cursorX += b.w + 60;
                 });
@@ -1035,7 +1247,8 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 });
                 if (step.annotation) this.drawAnnotationBox(step.annotation, cursorX + 20, originY - 60);
             }
-            drawMolecule(mol, x, y) {
+
+            drawMolecule(mol, x, y, orbitals = []) {
                 const xs = mol.atoms.map(a => a.x || 0),
                     ys = mol.atoms.map(a => a.y || 0);
                 const minX = Math.min(...xs),
@@ -1044,6 +1257,7 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     maxY = Math.max(...ys);
                 const width = (maxX - minX) * this.scale;
                 const height = (maxY - minY) * this.scale;
+
                 mol.atoms.forEach(a => {
                     const px = x + ((a.x || 0) - minX) * this.scale,
                         py = y + (a.y || 0) * this.scale;
@@ -1051,6 +1265,10 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                         x: px,
                         y: py
                     };
+
+                    const atomOrb = orbitals.find(o => o.atomId === a.id);
+                    if (atomOrb) this.drawOrbital(px, py, atomOrb.type, atomOrb.angle, atomOrb.color);
+
                     this.drawAtom(a, px, py);
                 });
                 mol.bonds.forEach(b => {
@@ -1069,6 +1287,25 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     maxY: y + maxY * this.scale
                 };
             }
+
+            drawOrbital(x, y, type, angleDeg, color = "rgba(0,0,255,0.3)") {
+                const g = document.createElementNS(NS, "g");
+                g.setAttribute("transform", `translate(${x},${y}) rotate(${angleDeg})`);
+
+                const path = document.createElementNS(NS, "path");
+                path.setAttribute("fill", color);
+                path.setAttribute("stroke", color.replace("0.3", "0.8"));
+                path.setAttribute("stroke-width", "1");
+
+                if (type === "p") {
+                    path.setAttribute("d", "M0,0 C15,-15 30,-10 30,0 C30,10 15,15 0,0 M0,0 C-10,-10 -20,-5 -20,0 C-20,5 -10,10 0,0");
+                } else if (type === "sp3") {
+                    path.setAttribute("d", "M0,0 C20,-25 40,-15 40,0 C40,15 20,25 0,0");
+                }
+                g.appendChild(path);
+                this.layerMain.insertBefore(g, this.layerMain.firstChild);
+            }
+
             drawAtom(a, x, y) {
                 const g = document.createElementNS(NS, "g");
                 g.setAttribute("transform", `translate(${x},${y})`);
@@ -1078,13 +1315,22 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 halo.setAttribute("text-anchor", "middle");
                 halo.setAttribute("dominant-baseline", "middle");
                 g.appendChild(halo);
-                const text = document.createElementNS(NS, "text");
-                text.textContent = a.symbol.replace(/(\d+)/g, (m) => String.fromCharCode(0x2080 + parseInt(m)));
-                text.setAttribute("class", "atom-text");
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("dominant-baseline", "middle");
-                text.setAttribute("fill", a.color || "#1e293b");
-                g.appendChild(text);
+
+                if (a.symbol.includes("_") || a.symbol.includes("^")) {
+                    this.drawRichText(g, a.symbol, -5, 5, {
+                        anchor: "middle",
+                        fontSize: 14
+                    });
+                } else {
+                    const text = document.createElementNS(NS, "text");
+                    text.textContent = a.symbol.replace(/(\d+)/g, (m) => String.fromCharCode(0x2080 + parseInt(m)));
+                    text.setAttribute("class", "atom-text");
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("fill", a.color || "#1e293b");
+                    g.appendChild(text);
+                }
+
                 if (a.charge) {
                     const charge = document.createElementNS(NS, "text");
                     charge.textContent = a.charge === '+' ? '⊕' : (a.charge === '-' ? '⊖' : a.charge);
@@ -1094,6 +1340,23 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     charge.setAttribute("fill", a.charge.includes('+') ? '#2563eb' : '#ef4444');
                     g.appendChild(charge);
                 }
+
+                if (a.partialCharge) {
+                    this.drawRichText(g, `\\delta^{${a.partialCharge}}`, -18, -10, {
+                        fontSize: 10,
+                        color: "gray"
+                    });
+                }
+
+                if (a.radical) {
+                    const dot = document.createElementNS(NS, "circle");
+                    dot.setAttribute("r", 2);
+                    dot.setAttribute("cx", 8);
+                    dot.setAttribute("cy", -10);
+                    dot.setAttribute("fill", a.color || "#f97316");
+                    g.appendChild(dot);
+                }
+
                 if (a.isotope) {
                     const iso = document.createElementNS(NS, "text");
                     iso.textContent = a.isotope;
@@ -1150,6 +1413,11 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 const path = document.createElementNS(NS, "path");
                 const color = b.color || "#334155";
                 let d = "";
+
+                if (b.style === 'dotted') {
+                    path.setAttribute("stroke-dasharray", "2,2");
+                }
+
                 if (b.type === 'double') {
                     const off = 3;
                     d = `M${sx+nx*off},${sy+ny*off} L${ex+nx*off},${ey+ny*off} M${sx-nx*off},${sy-ny*off} L${ex-nx*off},${ey-ny*off}`;
@@ -1174,7 +1442,7 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 if (b.type !== 'wedge') {
                     path.setAttribute("d", d);
                     path.setAttribute("stroke", color);
-                    path.setAttribute("stroke-width", "1.5");
+                    path.setAttribute("stroke-width", b.style === 'bold' ? "2.5" : "1.5");
                     path.setAttribute("fill", "none");
                     path.setAttribute("stroke-linecap", "round");
                     if (b.type === 'dash') path.setAttribute("stroke-dasharray", "4,3");
@@ -1187,11 +1455,13 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 const color = arrow.color || "#1e293b";
                 const type = arrow.type || 'forward';
                 const g = document.createElementNS(NS, "g");
+                g.setAttribute("opacity", "0.7");
+
                 if (type === 'eq') {
                     const path = document.createElementNS(NS, "path");
-                    path.setAttribute("d", `M${x},${y-4} L${x+100},${y-4} M${x+100},${y-4} L${x+90},${y-8} M${x+100},${y+4} L${x},${y+4} M${x},${y+4} L${x+10},${y+8}`);
+                    path.setAttribute("d", `M${x},${y-4} L${x+100},${y-4} M${x+95},${y-8} L${x+100},${y-4} L${x+95},${y} M${x+100},${y+4} L${x},${y+4} M${x+5},${y} L${x},${y+4} L${x+5},${y+8}`);
                     path.setAttribute("stroke", color);
-                    path.setAttribute("stroke-width", "1.5");
+                    path.setAttribute("stroke-width", "2");
                     path.setAttribute("fill", "none");
                     g.appendChild(path);
                 } else if (type === 'resonance') {
@@ -1201,25 +1471,32 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     line.setAttribute("x2", x + 100);
                     line.setAttribute("y2", y);
                     line.setAttribute("stroke", color);
-                    line.setAttribute("stroke-width", "1.5");
+                    line.setAttribute("stroke-width", "2");
                     line.setAttribute("marker-end", this.createMarker(color));
                     const mStartId = `marker-start-${color.replace('#','')}`;
                     if (!document.getElementById(mStartId)) {
                         const m = document.createElementNS(NS, "marker");
                         m.setAttribute("id", mStartId);
-                        m.setAttribute("markerWidth", "10");
-                        m.setAttribute("markerHeight", "10");
-                        m.setAttribute("refX", "2");
+                        m.setAttribute("markerWidth", "12");
+                        m.setAttribute("markerHeight", "12");
+                        m.setAttribute("refX", "6");
                         m.setAttribute("refY", "4");
                         m.setAttribute("orient", "auto");
                         const p = document.createElementNS(NS, "path");
-                        p.setAttribute("d", "M10,0 L0,4 L10,8 L8,4 Z");
+                        p.setAttribute("d", "M8,0 L0,4 L8,8 Z");
                         p.setAttribute("fill", color);
                         m.appendChild(p);
                         this.defs.appendChild(m);
                     }
                     line.setAttribute("marker-start", `url(#${mStartId})`);
                     g.appendChild(line);
+                } else if (type === 'retro') {
+                    const path = document.createElementNS(NS, "path");
+                    path.setAttribute("d", `M${x},${y-2} L${x+100},${y-2} M${x},${y+2} L${x+100},${y+2} M${x+95},${y-6} L${x+100},${y} L${x+95},${y+6}`);
+                    path.setAttribute("stroke", color);
+                    path.setAttribute("stroke-width", "2");
+                    path.setAttribute("fill", "none");
+                    g.appendChild(path);
                 } else {
                     const line = document.createElementNS(NS, "line");
                     line.setAttribute("x1", x);
@@ -1227,18 +1504,23 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                     line.setAttribute("x2", x + 100);
                     line.setAttribute("y2", y);
                     line.setAttribute("stroke", color);
-                    line.setAttribute("stroke-width", "1.5");
+                    line.setAttribute("stroke-width", "2");
                     line.setAttribute("marker-end", this.createMarker(color));
                     g.appendChild(line);
                 }
+
                 if (arrow.text_above) {
-                    const txt = document.createElementNS(NS, "text");
-                    txt.textContent = arrow.text_above.replace(/(\d+)/g, (m) => String.fromCharCode(0x2080 + parseInt(m)));
-                    txt.setAttribute("x", x + 50);
-                    txt.setAttribute("y", y - 10);
-                    txt.setAttribute("text-anchor", "middle");
-                    txt.setAttribute("font-size", "12px");
-                    g.appendChild(txt);
+                    this.drawRichText(g, arrow.text_above, x + 50, y - 10, {
+                        anchor: "middle",
+                        fontSize: 12
+                    });
+                }
+                if (arrow.text_below) {
+                    this.drawRichText(g, arrow.text_below, x + 50, y + 20, {
+                        anchor: "middle",
+                        fontSize: 12,
+                        color: "#64748b"
+                    });
                 }
                 this.layerMain.appendChild(g);
             }
@@ -1260,7 +1542,28 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 path.setAttribute("stroke", color);
                 path.setAttribute("stroke-width", "1.5");
                 path.setAttribute("fill", "none");
-                path.setAttribute("marker-end", this.createMarker(color));
+
+                if (m.type === 'fishhook') {
+                    const headId = `marker-fish-${color.replace('#','')}`;
+                    if (!document.getElementById(headId)) {
+                        const mk = document.createElementNS(NS, "marker");
+                        mk.setAttribute("id", headId);
+                        mk.setAttribute("markerWidth", "12");
+                        mk.setAttribute("markerHeight", "12");
+                        mk.setAttribute("refX", "6");
+                        mk.setAttribute("refY", "4");
+                        mk.setAttribute("orient", "auto");
+                        const p = document.createElementNS(NS, "path");
+                        p.setAttribute("d", "M0,0 L8,4 L2,4 Z");
+                        p.setAttribute("fill", color);
+                        mk.appendChild(p);
+                        this.defs.appendChild(mk);
+                    }
+                    path.setAttribute("marker-end", `url(#${headId})`);
+                } else {
+                    path.setAttribute("marker-end", this.createMarker(color));
+                }
+
                 this.layerMain.appendChild(path);
             }
             drawDynamicBracket(b) {
@@ -1334,7 +1637,6 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
 
         function parseAndRender() {
             try {
-                // RUN CLEANER AGAIN JUST IN CASE MANUAL EDIT
                 let dataVal = document.getElementById('jsonInput').value;
                 if (!dataVal.trim().startsWith('{')) dataVal = cleanJSON(dataVal);
 
@@ -1369,6 +1671,7 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
             };
             reader.readAsText(file);
         }
+
         async function pasteAndClear() {
             try {
                 const text = await navigator.clipboard.readText();
@@ -1379,272 +1682,29 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
             }
         }
 
-        function loadComplexDemo() {
-            document.getElementById('jsonInput').value = JSON.stringify({
-                "title": "Benzene Mechanism Stress Test",
-                "steps": [{
-                        "annotation": "<b>Step 1</b><br>Electrophile generation",
-                        "reactants": [{
-                            "id": "mol_hno3",
-                            "atoms": [{
-                                "id": "hno3_n",
-                                "symbol": "N",
-                                "charge": "+",
-                                "color": "#3b82f6"
-                            }, {
-                                "id": "hno3_o1",
-                                "symbol": "O",
-                                "lonePairs": 2,
-                                "color": "#ef4444"
-                            }, {
-                                "id": "hno3_o2",
-                                "symbol": "O",
-                                "lonePairs": 2,
-                                "color": "#ef4444"
-                            }, {
-                                "id": "hno3_o3",
-                                "symbol": "O",
-                                "charge": "-",
-                                "lonePairs": 3,
-                                "color": "#ef4444"
-                            }],
-                            "bonds": [{
-                                "from": "hno3_n",
-                                "to": "hno3_o1",
-                                "type": "double"
-                            }, {
-                                "from": "hno3_n",
-                                "to": "hno3_o2",
-                                "type": "single"
-                            }, {
-                                "from": "hno3_n",
-                                "to": "hno3_o3",
-                                "type": "single"
-                            }]
-                        }],
-                        "arrow": {
-                            "type": "eq",
-                            "text_above": "H2SO4"
-                        },
-                        "products": [{
-                            "id": "mol_no2plus",
-                            "atoms": [{
-                                "id": "no2_n",
-                                "symbol": "N",
-                                "charge": "+",
-                                "color": "#3b82f6"
-                            }, {
-                                "id": "no2_o1",
-                                "symbol": "O",
-                                "lonePairs": 2,
-                                "color": "#ef4444"
-                            }, {
-                                "id": "no2_o2",
-                                "symbol": "O",
-                                "lonePairs": 2,
-                                "color": "#ef4444"
-                            }],
-                            "bonds": [{
-                                "from": "no2_n",
-                                "to": "no2_o1",
-                                "type": "double"
-                            }, {
-                                "from": "no2_n",
-                                "to": "no2_o2",
-                                "type": "double"
-                            }]
-                        }]
-                    },
-                    {
-                        "annotation": "<b>Step 2</b><br>Electrophilic attack on benzene",
-                        "reactants": [{
-                            "id": "mol_benzene",
-                            "atoms": [{
-                                "id": "c1",
-                                "symbol": "C"
-                            }, {
-                                "id": "c2",
-                                "symbol": "C"
-                            }, {
-                                "id": "c3",
-                                "symbol": "C"
-                            }, {
-                                "id": "c4",
-                                "symbol": "C"
-                            }, {
-                                "id": "c5",
-                                "symbol": "C"
-                            }, {
-                                "id": "c6",
-                                "symbol": "C"
-                            }],
-                            "bonds": [{
-                                "from": "c1",
-                                "to": "c2",
-                                "type": "double"
-                            }, {
-                                "from": "c2",
-                                "to": "c3",
-                                "type": "single"
-                            }, {
-                                "from": "c3",
-                                "to": "c4",
-                                "type": "double"
-                            }, {
-                                "from": "c4",
-                                "to": "c5",
-                                "type": "single"
-                            }, {
-                                "from": "c5",
-                                "to": "c6",
-                                "type": "double"
-                            }, {
-                                "from": "c6",
-                                "to": "c1",
-                                "type": "single"
-                            }]
-                        }, {
-                            "id": "mol_no2plus_step2",
-                            "atoms": [{
-                                "id": "no2p_n",
-                                "symbol": "N",
-                                "charge": "+",
-                                "color": "#3b82f6"
-                            }, {
-                                "id": "no2p_o1",
-                                "symbol": "O",
-                                "lonePairs": 2,
-                                "color": "#ef4444"
-                            }, {
-                                "id": "no2p_o2",
-                                "symbol": "O",
-                                "lonePairs": 2,
-                                "color": "#ef4444"
-                            }],
-                            "bonds": [{
-                                "from": "no2p_n",
-                                "to": "no2p_o1",
-                                "type": "double"
-                            }, {
-                                "from": "no2p_n",
-                                "to": "no2p_o2",
-                                "type": "double"
-                            }]
-                        }],
-                        "arrow": {
-                            "type": "forward"
-                        },
-                        "mechanism": [{
-                            "from": "c1",
-                            "to": "no2p_n",
-                            "curve": -40,
-                            "color": "#3b82f6"
-                        }],
-                        "brackets": [{
-                            "targets": ["mol_benzene"],
-                            "label": "‡"
-                        }],
-                        "products": [{
-                            "id": "mol_sigma",
-                            "atoms": [{
-                                "id": "sc1",
-                                "symbol": "C",
-                                "charge": "+",
-                                "color": "#2563eb"
-                            }, {
-                                "id": "sc2",
-                                "symbol": "C"
-                            }, {
-                                "id": "sc3",
-                                "symbol": "C"
-                            }, {
-                                "id": "sc4",
-                                "symbol": "C"
-                            }, {
-                                "id": "sc5",
-                                "symbol": "C"
-                            }, {
-                                "id": "sc6",
-                                "symbol": "C"
-                            }, {
-                                "id": "sc_no2_n",
-                                "symbol": "N"
-                            }, {
-                                "id": "sc_no2_o1",
-                                "symbol": "O",
-                                "lonePairs": 2
-                            }, {
-                                "id": "sc_no2_o2",
-                                "symbol": "O",
-                                "lonePairs": 2
-                            }],
-                            "bonds": [{
-                                "from": "sc1",
-                                "to": "sc2",
-                                "type": "single"
-                            }, {
-                                "from": "sc2",
-                                "to": "sc3",
-                                "type": "double"
-                            }, {
-                                "from": "sc3",
-                                "to": "sc4",
-                                "type": "single"
-                            }, {
-                                "from": "sc4",
-                                "to": "sc5",
-                                "type": "double"
-                            }, {
-                                "from": "sc5",
-                                "to": "sc6",
-                                "type": "single"
-                            }, {
-                                "from": "sc6",
-                                "to": "sc1",
-                                "type": "single"
-                            }, {
-                                "from": "sc1",
-                                "to": "sc_no2_n",
-                                "type": "single"
-                            }, {
-                                "from": "sc_no2_n",
-                                "to": "sc_no2_o1",
-                                "type": "double"
-                            }, {
-                                "from": "sc_no2_n",
-                                "to": "sc_no2_o2",
-                                "type": "double"
-                            }]
-                        }]
-                    }
-                ]
-            }, null, 2);
+        function loadFullDemo() {
+            document.getElementById('jsonInput').value = JSON.stringify(DEMO_JSON, null, 2);
         }
 
-        // === FIXED: FULL-HEIGHT EXPORT (CLONE & SNAPSHOT) ===
         function downloadImage() {
             const container = document.getElementById('canvas-container');
             if (!container) return;
 
-            // 1. CLONE THE CONTAINER TO REMOVE SCROLLBAR LIMITS
             const clone = container.cloneNode(true);
 
-            // 2. STYLE IT TO BE INVISIBLE BUT FULLY EXPANDED
             clone.style.position = 'absolute';
             clone.style.top = '0';
-            clone.style.left = '-9999px'; // Move off-screen
-            clone.style.width = '1200px'; // Force standard width
-            clone.style.height = 'auto'; // Allow full height
+            clone.style.left = '-9999px';
+            clone.style.width = '1200px';
+            clone.style.height = 'auto';
             clone.style.overflow = 'visible';
             clone.style.background = '#ffffff';
 
-            // 3. APPEND TO BODY TEMPORARILY
             document.body.appendChild(clone);
 
-            // 4. CAPTURE THE CLONE
             html2canvas(clone, {
                 backgroundColor: "#ffffff",
-                scale: 2, // High DPI
+                scale: 2,
                 logging: false,
                 useCORS: true
             }).then(canvas => {
@@ -1653,7 +1713,6 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
                 a.download = "mechanism_export.png";
                 a.click();
 
-                // 5. CLEAN UP
                 document.body.removeChild(clone);
                 notify("Image saved successfully!", "success");
             }).catch(err => {
@@ -1664,7 +1723,7 @@ FEW-SHOT EXAMPLE (STRICTLY FOLLOW THIS STRUCTURE)
         }
 
         window.onload = () => {
-            loadComplexDemo();
+            loadFullDemo();
             parseAndRender();
         };
     </script>
