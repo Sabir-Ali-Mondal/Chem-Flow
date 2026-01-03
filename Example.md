@@ -1,3 +1,202 @@
+#Two Example *JSON*
+
+
+```json
+{
+  "title": "SN1 Hydrolysis of tert-Butyl Chloride (Non-Aromatic)",
+  "steps": [
+    {
+      "annotation": "<b>Question</b><br>Show the complete SN1 mechanism for hydrolysis of tert-butyl chloride in aqueous medium",
+      "reactants": [
+        {
+          "id": "mol_tbucl_question",
+          "atoms": [
+            { "id": "q_c1", "symbol": "C" },
+            { "id": "q_c2", "symbol": "CH3" },
+            { "id": "q_c3", "symbol": "CH3" },
+            { "id": "q_c4", "symbol": "CH3" },
+            { "id": "q_cl", "symbol": "Cl", "lonePairs": 3, "color": "#b91c1c" }
+          ],
+          "bonds": [
+            { "from": "q_c1", "to": "q_c2", "type": "single" },
+            { "from": "q_c1", "to": "q_c3", "type": "single" },
+            { "from": "q_c1", "to": "q_c4", "type": "single" },
+            { "from": "q_c1", "to": "q_cl", "type": "single" }
+          ]
+        }
+      ],
+      "products": []
+    },
+    {
+      "annotation": "<b>Step 1</b><br>Ionization (Rate Determining Step)",
+      "reactants": [
+        {
+          "id": "mol_tbucl_step1",
+          "atoms": [
+            { "id": "s1_c1", "symbol": "C" },
+            { "id": "s1_c2", "symbol": "CH3" },
+            { "id": "s1_c3", "symbol": "CH3" },
+            { "id": "s1_c4", "symbol": "CH3" },
+            { "id": "s1_cl", "symbol": "Cl", "lonePairs": 3, "color": "#b91c1c" }
+          ],
+          "bonds": [
+            { "from": "s1_c1", "to": "s1_c2", "type": "single" },
+            { "from": "s1_c1", "to": "s1_c3", "type": "single" },
+            { "from": "s1_c1", "to": "s1_c4", "type": "single" },
+            { "from": "s1_c1", "to": "s1_cl", "type": "single" }
+          ]
+        }
+      ],
+      "mechanism": [
+        { "from": "s1_c1", "to": "s1_cl", "curve": 40, "color": "#ef4444" }
+      ],
+      "arrow": { "type": "forward", "text_above": "Slow" },
+      "products": [
+        {
+          "id": "mol_tert_butyl_cation",
+          "atoms": [
+            { "id": "cat_c1", "symbol": "C", "charge": "+", "color": "#2563eb" },
+            { "id": "cat_c2", "symbol": "CH3" },
+            { "id": "cat_c3", "symbol": "CH3" },
+            { "id": "cat_c4", "symbol": "CH3" }
+          ],
+          "bonds": [
+            { "from": "cat_c1", "to": "cat_c2", "type": "single" },
+            { "from": "cat_c1", "to": "cat_c3", "type": "single" },
+            { "from": "cat_c1", "to": "cat_c4", "type": "single" }
+          ]
+        },
+        {
+          "id": "mol_chloride_ion",
+          "atoms": [
+            { "id": "cl_minus", "symbol": "Cl", "charge": "-", "lonePairs": 4, "color": "#b91c1c" }
+          ],
+          "bonds": []
+        }
+      ],
+      "brackets": [
+        { "targets": ["mol_tert_butyl_cation"], "label": "‡" }
+      ]
+    },
+    {
+      "annotation": "<b>Step 2</b><br>Nucleophilic attack by water",
+      "reactants": [
+        {
+          "id": "mol_carbocation_step2",
+          "atoms": [
+            { "id": "s2_c1", "symbol": "C", "charge": "+", "color": "#2563eb" },
+            { "id": "s2_c2", "symbol": "CH3" },
+            { "id": "s2_c3", "symbol": "CH3" },
+            { "id": "s2_c4", "symbol": "CH3" }
+          ],
+          "bonds": [
+            { "from": "s2_c1", "to": "s2_c2", "type": "single" },
+            { "from": "s2_c1", "to": "s2_c3", "type": "single" },
+            { "from": "s2_c1", "to": "s2_c4", "type": "single" }
+          ]
+        },
+        {
+          "id": "mol_water_nucleophile",
+          "atoms": [
+            { "id": "w_o", "symbol": "O", "lonePairs": 2, "color": "#3b82f6" },
+            { "id": "w_h1", "symbol": "H" },
+            { "id": "w_h2", "symbol": "H" }
+          ],
+          "bonds": [
+            { "from": "w_o", "to": "w_h1", "type": "single" },
+            { "from": "w_o", "to": "w_h2", "type": "single" }
+          ]
+        }
+      ],
+      "mechanism": [
+        { "from": "w_o", "to": "s2_c1", "curve": -40, "color": "#3b82f6" }
+      ],
+      "arrow": { "type": "forward" },
+      "products": [
+        {
+          "id": "mol_protonated_alcohol",
+          "atoms": [
+            { "id": "p_c1", "symbol": "C" },
+            { "id": "p_c2", "symbol": "CH3" },
+            { "id": "p_c3", "symbol": "CH3" },
+            { "id": "p_c4", "symbol": "CH3" },
+            { "id": "p_o", "symbol": "O", "charge": "+", "lonePairs": 1, "color": "#ef4444" },
+            { "id": "p_h1", "symbol": "H" },
+            { "id": "p_h2", "symbol": "H" }
+          ],
+          "bonds": [
+            { "from": "p_c1", "to": "p_c2", "type": "single" },
+            { "from": "p_c1", "to": "p_c3", "type": "single" },
+            { "from": "p_c1", "to": "p_c4", "type": "single" },
+            { "from": "p_c1", "to": "p_o", "type": "single" },
+            { "from": "p_o", "to": "p_h1", "type": "single" },
+            { "from": "p_o", "to": "p_h2", "type": "single" }
+          ]
+        }
+      ]
+    },
+    {
+      "annotation": "<b>Step 3</b><br>Deprotonation",
+      "reactants": [
+        {
+          "id": "mol_protonated_alcohol_step3",
+          "atoms": [
+            { "id": "d_o", "symbol": "O", "charge": "+", "lonePairs": 1, "color": "#ef4444" },
+            { "id": "d_h", "symbol": "H" }
+          ],
+          "bonds": [
+            { "from": "d_o", "to": "d_h", "type": "single" }
+          ]
+        },
+        {
+          "id": "mol_water_base",
+          "atoms": [
+            { "id": "b_o", "symbol": "O", "lonePairs": 2, "color": "#3b82f6" },
+            { "id": "b_h1", "symbol": "H" },
+            { "id": "b_h2", "symbol": "H" }
+          ],
+          "bonds": [
+            { "from": "b_o", "to": "b_h1", "type": "single" },
+            { "from": "b_o", "to": "b_h2", "type": "single" }
+          ]
+        }
+      ],
+      "mechanism": [
+        { "from": "b_o", "to": "d_h", "curve": -30, "color": "#3b82f6" },
+        { "from": "d_o", "to": "d_h", "curve": 30, "color": "#ef4444" }
+      ],
+      "arrow": { "type": "forward" },
+      "products": []
+    },
+    {
+      "annotation": "<b>Final Product</b><br>tert-Butyl alcohol formed",
+      "reactants": [
+        {
+          "id": "mol_tert_butanol_final",
+          "atoms": [
+            { "id": "f_c1", "symbol": "C" },
+            { "id": "f_c2", "symbol": "CH3" },
+            { "id": "f_c3", "symbol": "CH3" },
+            { "id": "f_c4", "symbol": "CH3" },
+            { "id": "f_o", "symbol": "O", "lonePairs": 2, "color": "#ef4444" },
+            { "id": "f_h", "symbol": "H" }
+          ],
+          "bonds": [
+            { "from": "f_c1", "to": "f_c2", "type": "single" },
+            { "from": "f_c1", "to": "f_c3", "type": "single" },
+            { "from": "f_c1", "to": "f_c4", "type": "single" },
+            { "from": "f_c1", "to": "f_o", "type": "single" },
+            { "from": "f_o", "to": "f_h", "type": "single" }
+          ]
+        }
+      ],
+      "products": []
+    }
+  ]
+}
+```
+
+
 ```json
 {
   "title": "ChemFlow Ultimate Full Capability Stress Test (Aromatic + Aliphatic)",
