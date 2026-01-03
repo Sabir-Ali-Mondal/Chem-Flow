@@ -1,95 +1,117 @@
-# ChemFlow - Ultimate Capability Specification
+# ChemFlow - Complete Drawing Capability Reference
 
-## 1. Structure & Bonding Engine
-**Function:** `drawBond(p1, p2, type)`
+## 🔗 STRUCTURAL FEATURES
 
-The rendering engine supports complex stereochemistry and variable bond orders with custom styling.
+### Bonds
+| Feature | JSON Property | Values | Visual Output |
+|---------|---------------|--------|---------------|
+| Single Bond | `"type"` | `"single"` | ─ |
+| Double Bond | `"type"` | `"double"` | ═ |
+| Triple Bond | `"type"` | `"triple"` | ≡ |
+| Wedge Bond | `"type"` | `"wedge"` | ▶ (Solid triangle) |
+| Dashed Bond | `"type"` | `"dash"` | - - - (Dashed line) |
+| Wavy Bond | `"type"` | `"wavy"` | ～～～ (Unknown stereo) |
+| Dotted Bond | `"style"` | `"dotted"` | ··· (H-bonds/TS) |
+| Bold Bond | `"style"` | `"bold"` | ━ (Emphasis) |
 
-| Capability | Property Value | Visual Output |
-|:---|:---|:---|
-| **Single Bond** | `"type": "single"` | Solid line (Standard sigma bond) |
-| **Double Bond** | `"type": "double"` | Parallel lines with 3px offset (Pi bond) |
-| **Triple Bond** | `"type": "triple"` | Triple parallel lines (Alkynes/Nitriles) |
-| **Stereo Wedge** | `"type": "wedge"` | Solid triangle (Stereochemistry OUT) |
-| **Stereo Dash** | `"type": "dash"` | Dashed line pattern (Stereochemistry IN) |
-| **Wavy Bond** | `"type": "wavy"` | Zig-zag line (Unknown stereochemistry) |
-| **Custom Color** | `"color": "#HEX"` | Overrides default black (e.g., for highlighted bonds) |
+### Ring Detection
+| Feature | Function | Description |
+|---------|----------|-------------|
+| Auto Hexagon | `findCycle()` | Detects 6-membered rings, arranges as hexagon |
+| Auto Pentagon | `findCycle()` | Detects 5-membered rings |
+| Auto Layout | `LayoutResolver` | Calculates x,y for non-positioned atoms |
 
-***
+---
 
-## 2. Atom Intelligence System
-**Function:** `drawAtom(atom)`
+## ⚛️ ATOM PROPERTIES
 
-Handles typography, automatic formatting, and sub-atomic particle visualization.
+### Basic Properties
+| Feature | JSON Property | Example Values | Description |
+|---------|---------------|----------------|-------------|
+| Element Symbol | `"symbol"` | `"C"`, `"O"`, `"N"` | Any element |
+| Functional Group | `"symbol"` | `"Ph"`, `"CH3"`, `"Et"` | Common groups |
+| Isotope Label | `"isotope"` | `"13"`, `"2"` | Superscript number |
+| Atom Color | `"color"` | `"#ef4444"` | Custom hex color |
 
-| Feature | Implementation | Description |
-|:---|:---|:---|
-| **Smart Subscripts** | `Regex Parsing` | Automatically formats numbers (e.g., `NH2` → `NH₂`). |
-| **Formal Charges** | `"charge": "+/-"` | Renders `⊕` (Blue) or `⊖` (Red) at top-right. |
-| **Multi-Charges** | `"charge": "+2"` | Renders numeric charges (`+2`, `-2`). |
-| **Isotopes** | `"isotope": "13"` | Renders superscript mass number on left (`¹³C`). |
-| **Lone Pairs** | `"lonePairs": 1-4` | Renders graphical electron dots around the atom. |
-| **Halo Masking** | `.atom-halo` | White stroke behind text to prevent bond overlaps. |
+### Electronic Properties
+| Feature | JSON Property | Values | Visual |
+|---------|---------------|--------|--------|
+| Formal Charge | `"charge"` | `"+"`, `"-"`, `"+2"` | ⊕ (blue) / ⊖ (red) |
+| Partial Charge | `"partialCharge"` | `"+"`, `"-"` | δ⁺ / δ⁻ |
+| Lone Pairs | `"lonePairs"` | `0-4` | •• (dot pairs) |
+| Radical Electron | `"radical"` | `true` | • (single dot) |
 
-***
+### Advanced Text
+| Feature | JSON Property | Example | Output |
+|---------|---------------|---------|--------|
+| Subscripts | `"symbol"` | `"H_{2}O"` | H₂O |
+| Superscripts | `"symbol"` | `"M^{2+}"` | M²⁺ |
+| Greek Letters | `"symbol"` | `"C_{\\alpha}"` | Cα |
 
-## 3. Reaction Arrow Logic
-**Function:** `drawReactionArrow(arrow)`
+---
 
-Supports all standard organic chemistry reaction pathways.
+## 🔄 ELECTRON MOVEMENT
 
-| Type | Identifier | Visual | Usage |
-|:---|:---|:---|:---|
-| **Forward** | `"forward"` | `→` | Standard product formation. |
-| **Equilibrium** | `"eq"` | `⇌` | Reversible / Equilibrium steps. |
-| **Resonance** | `"resonance"` | `↔` | Electron delocalization visualization. |
-| **Retrosynthetic** | `"retro"` | `⇒` | Retrosynthetic analysis planning. |
-| **Conditions** | `"text_above"` | Text | Reagents/Solvents centered above arrow. |
+### Mechanism Arrows (Curved)
+| Feature | JSON Property | Values | Purpose |
+|---------|---------------|--------|---------|
+| 2-Electron Arrow | `"type"` | `"curved"` (default) | Standard mechanism |
+| 1-Electron Arrow | `"type"` | `"fishhook"` | Radical reactions |
+| Arrow Curvature | `"curve"` | `-40` to `+40` | Arc height control |
+| Arrow Color | `"color"` | `"#3b82f6"` | Custom coloring |
 
-***
+### Reaction Arrows
+| Feature | JSON `"type"` | Symbol | Meaning |
+|---------|---------------|--------|---------|
+| Forward | `"forward"` | → | Reaction progress |
+| Equilibrium | `"eq"` | ⇌ | Reversible reaction |
+| Resonance | `"resonance"` | ↔ | Resonance structures |
+| Retrosynthetic | `"retro"` | ⇒ | Retrosynthesis |
 
-## 4. Mechanism & Electron Flow
-**Function:** `drawMechArrow(mech)`
+### Conditions on Arrows
+| Feature | JSON Property | Example | Position |
+|---------|---------------|---------|----------|
+| Reagents | `"text_above"` | `"H2SO4"` | Above arrow |
+| Conditions | `"text_below"` | `"heat"`, `"h\\nu"` | Below arrow |
 
-Bezier-curve based engine for "Curved Arrow Formalism".
+---
 
-*   **Precision Targeting:** Arrows connect from specific `atom.id` to `atom.id`.
-*   **Quadratic Curves:** Uses control points to create smooth arcs (`curve` parameter).
-*   **Context Aware:** Defaults to **Blue** for electron movement, supports **Red** for bond breaking.
-*   **Dynamic Markers:** Generates arrowheads on-the-fly to match any custom color.
+## 🧬 ORBITALS & QUANTUM
 
-***
+| Feature | JSON Array | Properties | Description |
+|---------|-----------|------------|-------------|
+| p-Orbital | `"orbitals"` | `"type": "p"` | Teardrop lobes with phase |
+| sp³-Orbital | `"orbitals"` | `"type": "sp3"` | Hybridized orbital |
+| Angle Control | - | `"angle": 90` | Rotation in degrees |
+| Transparency | - | `"color": "rgba(0,0,255,0.3)"` | Overlap visibility |
 
-## 5. Transition State Wrapping
-**Function:** `drawDynamicBracket(bracket)`
+---
 
-Replaces legacy fixed-coordinate brackets with intelligent object wrapping.
+## 📦 BRACKETS & ENCLOSURES
 
-*   **Targeting:** Accepts a list of molecule IDs (`"targets": ["mol1"]`).
-*   **Auto-Bounding:** Calculates the precise `minX, maxX, minY, maxY` of all atoms in the target molecules.
-*   **Padding:** Adds standard breathing room around the structures.
-*   **Labeling:** Supports the Double Dagger (`‡`) or custom text labels (`TS`).
+| Feature | JSON Property | Example | Purpose |
+|---------|---------------|---------|---------|
+| Transition State | `"brackets"` | `"label": "‡"` | TS indicator |
+| Dynamic Wrap | `"targets"` | `["mol1", "mol2"]` | Auto-wraps molecules |
+| Custom Label | `"label"` | `"TS1"` | Custom text |
 
-***
+---
 
-## 6. Smart Layout Engine
-**Class:** `LayoutResolver` & `ChemEngine`
+## 📝 ANNOTATIONS
 
-The "Brain" of the application that handles positioning when data is missing.
+| Feature | Implementation | Supports |
+|---------|----------------|----------|
+| Step Annotations | `"annotation"` | HTML markup (`<b>`, `<br>`) |
+| Rich Text | Auto-parser | Sub/superscripts, Greek |
 
-| Feature | Description |
-|:---|:---|
-| **Auto-Layout** | If `x` and `y` are omitted in JSON, the engine automatically calculates positions using a zig-zag chain algorithm. |
-| **Auto-Height** | The canvas automatically expands vertically to fit steps of any size, preventing clipping. |
-| **Auto-Width** | The canvas automatically expands horizontally to accommodate long reaction chains or large molecules. |
-| **Responsive Grid** | Standardized grid system where `1.0 unit = 45px` for consistent scaling. |
+---
 
-***
+## 🎨 COLOR PALETTE (Recommended)
 
-## 7. Premium UI/UX Architecture
-
-*   **Custom Scrollbars:** Replaces default browser scrollbars with "Slate" themed, rounded bars.
-*   **Toast Notifications:** Non-intrusive pop-ups for success/error states.
-*   **Clipboard Integration:** One-click copying of System Prompts.
-*   **Intro Animation:** Independent module for branding ("ChemFlow").
-*   **SVG-to-Image:** Native HTML5 Canvas conversion to download high-res PNGs.
+| Element Type | Hex Code | Usage |
+|--------------|----------|-------|
+| Oxygen/Electrophiles | `#ef4444` | Red |
+| Nitrogen/Nucleophiles | `#3b82f6` | Blue |
+| Leaving Groups | `#b91c1c` | Dark Red |
+| Carbocations | `#2563eb` | Bright Blue |
+| Radicals | `#f97316` | Orange |
