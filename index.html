@@ -111,15 +111,19 @@
 
         .atom-text {
             font-family: 'Segoe UI', sans-serif;
-            font-weight: 700;
+            font-weight: 800;
             pointer-events: none;
         }
 
         .atom-halo {
-            stroke: white;
-            stroke-width: 4px;
-            stroke-linejoin: round;
             fill: white;
+            stroke: white;
+            stroke-width: 2px;
+            /* little thick so blur looks smooth */
+            filter: blur(1.2px);
+            /* small blur ONLY */
+            opacity: 0.7;
+            /* helps avoid dirty edges */
         }
 
         .bond {
