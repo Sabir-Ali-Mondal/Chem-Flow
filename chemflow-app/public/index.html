@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemFlow</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --surface: #ffffff;
+            --bg: #fffbeb;
+            --text-main: #78350f;
+            --text-sub: #92400e;
+            --border: #fde68a;
+            --premium-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 16px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border: 3px solid transparent;
+            border-radius: 2px;
+            background-clip: content-box;
+            transition: background-color 0.2s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        .code-editor::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+
+        .code-editor::-webkit-scrollbar-thumb:hover {
+            background-color: #64748b;
+        }
+
+        header {
+            height: 64px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .brand {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .brand span {
+            color: var(--primary);
+        }
+
+        .stage {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+        }
+
+        .scroll-area {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: #ffffff;
+            background-image:
+                linear-gradient(rgba(226, 232, 240, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(226, 232, 240, 0.5) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .chem-svg {
+            display: block;
+        }
+
+        .atom-text {
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        .atom-halo {
+            stroke: white;
+            stroke-width: 4px;
+            stroke-linejoin: round;
+            fill: white;
+        }
+
+        .bond {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            background: var(--premium-gradient);
+            color: white;
+            border: none;
+            padding: 20px 30px;
+        }
+
+        .premium-tabs .nav-link {
+            color: #64748b;
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 0;
+        }
+
+        .premium-tabs .nav-link.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+            background: transparent;
+        }
+
+        .code-editor {
+            width: 100%;
+            min-height: 450px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            background: #0f172a;
+            color: #f8fafc;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 80px 20px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: #fff;
+            transform: scale(1.01);
+        }
+
+        .cropper-container-box {
+            width: 100%;
+            max-height: 500px;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            background: #000;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border-radius: 20px;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .custom-toast {
+            min-width: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--primary);
+            padding: 16px;
+            margin-bottom: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="chemflow-intro-loader">
+        <style>
+            #chemflow-intro-loader {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+                z-index: 99999;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                font-family: 'Segoe UI', sans-serif;
+                transition: opacity 0.8s ease-out, visibility 0.8s;
+            }
+
+            .hex-grid {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                opacity: 0.05;
+                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill-rule='evenodd' stroke='%23f59e0b' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+                animation: cf-bg-scroll 20s linear infinite;
+            }
+
+            .cf-logo-box {
+                position: relative;
+                text-align: center;
+                z-index: 2;
+            }
+
+            .cf-flask {
+                font-size: 4rem;
+                color: #f59e0b;
+                opacity: 0;
+                transform: translateY(20px);
+                animation: cf-slide-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+                margin-bottom: 10px;
+                display: inline-block;
+            }
+
+            .cf-title {
+                font-size: 3.5rem;
+                font-weight: 800;
+                color: #78350f;
+                margin: 0;
+                opacity: 0;
+                letter-spacing: -2px;
+                transform: scale(0.9);
+                animation: cf-pop-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+            }
+
+            .cf-title span {
+                color: #f59e0b;
+                display: inline-block;
+            }
+
+            .cf-credits {
+                margin-top: 20px;
+                border-top: 2px solid #fde68a;
+                padding-top: 15px;
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+                white-space: nowrap;
+                margin-left: auto;
+                margin-right: auto;
+                animation: cf-expand-line 0.8s ease-out 1s forwards;
+            }
+
+            .cf-credit-text {
+                display: block;
+                font-size: 0.85rem;
+                color: #92400e;
+                font-weight: 600;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            .cf-c1 {
+                animation: cf-fade-up 0.5s ease-out 1.4s forwards;
+            }
+
+            .cf-c2 {
+                animation: cf-fade-up 0.5s ease-out 1.6s forwards;
+                font-size: 0.75rem;
+                color: #b45309;
+            }
+
+            @keyframes cf-bg-scroll {
+                0% {
+                    background-position: 0 0;
+                }
+
+                100% {
+                    background-position: 60px 60px;
+                }
+            }
+
+            @keyframes cf-slide-up {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes cf-pop-in {
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            @keyframes cf-expand-line {
+                to {
+                    width: 200px;
+                    opacity: 1;
+                }
+            }
+
+            @keyframes cf-fade-up {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .cf-bubble {
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                background: #f59e0b;
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                z-index: -1;
+                opacity: 0;
+                animation: cf-bubble-pop 1.5s ease-out 0.8s infinite;
+            }
+
+            @keyframes cf-bubble-pop {
+                0% {
+                    transform: translate(-50%, -50%) scale(0);
+                    opacity: 0.8;
+                }
+
+                100% {
+                    transform: translate(-50%, -100px) scale(2);
+                    opacity: 0;
+                }
+            }
+        </style>
+        <div class="hex-grid"></div>
+        <div class="cf-logo-box">
+            <div class="cf-flask"><i class="bi bi-hexagon-fill"></i></div>
+            <h1 class="cf-title">Chem<span>Flow</span></h1>
+            <div class="cf-bubble"></div>
+            <div class="cf-credits">
+                <span class="cf-credit-text cf-c1">Developed by S.A.M</span>
+                <span class="cf-credit-text cf-c2">Idea by Nayan</span>
+            </div>
+        </div>
+        <script>
+            setTimeout(() => {
+                const l = document.getElementById('chemflow-intro-loader');
+                l.style.opacity = '0';
+                l.style.visibility = 'hidden';
+                setTimeout(() => l.remove(), 800);
+            }, 3500);
+        </script>
+    </div>
+
+    <header>
+        <div class="brand">Chem<span>Flow</span> <small class="text-slate-400 font-normal text-xs ml-2">by S.A.M</small></div>
+        <div class="flex gap-2">
+            <button class="btn bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 border-none shadow-sm flex items-center gap-2" onclick="openModal()">
+                Studio
+            </button>
+            <button class="btn btn-outline-secondary flex items-center gap-2" onclick="downloadImage()">
+                <i class="bi bi-camera"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="stage">
+        <div class="scroll-area" id="canvas-container"></div>
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div class="modal fade" id="dataModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div id="aiLoading" class="loading-overlay">
+                    <div class="spinner-border text-amber-500 mb-4" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <h4 class="text-amber-900 font-bold mb-1">Gemini Pro is Thinking...</h4>
+                    <p class="text-amber-700">Analyzing chemical structure & mapping mechanism</p>
+                    <button class="btn btn-link text-slate-400 mt-4 text-xs" onclick="cancelAI()">Cancel Request</button>
+                </div>
+
+                <div class="modal-header">
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <i class="bi bi-hexagon-fill"></i> Molecular Intelligence Lab
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    <ul class="nav nav-tabs premium-tabs border-b" id="labTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ai-panel"><i class="bi bi-magic me-2"></i>AI Vision</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#json-panel"><i class="bi bi-code-slash me-2"></i>JSON Engine</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-4">
+                        <div class="tab-pane fade show active" id="ai-panel">
+                            <div class="row g-4">
+                                <div class="col-lg-7">
+                                    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                                        <i class="bi bi-image-fill text-slate-300 display-4 mb-3"></i>
+                                        <h5 class="text-slate-700">Upload Mechanism Image</h5>
+                                        <p class="text-slate-400 small">Drag & drop your photo or click to browse</p>
+                                        <input type="file" id="fileInput" hidden accept="image/*">
+                                    </div>
+                                    <div class="cropper-container-box" id="cropBox">
+                                        <img id="imageToCrop" src="">
+                                    </div>
+                                    <div id="cropControls" class="mt-3 flex gap-2 justify-center hidden">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="resetUpload()">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Change Image
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5">
+                                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                        <label class="block text-slate-600 font-bold mb-2 text-sm uppercase">Reaction Title / Prompt</label>
+                                        <textarea id="aiUserPrompt" class="form-control mb-4 border-2 focus:border-amber-400" rows="4" placeholder="e.g. SN1 reaction mechanism of tert-butyl bromide with water..."></textarea>
+
+                                        <button class="btn btn-primary w-100 py-3 rounded-xl shadow-lg border-none bg-amber-500 hover:bg-amber-600 transition-all transform active:scale-95" onclick="generateFromAI()">
+                                            <i class="bi bi-stars me-2"></i> ANALYZE & GENERATE
+                                        </button>
+
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100 flex items-center justify-between">
+                                    <div class="text-xs text-amber-800 leading-relaxed mb-0">
+                                        <i class="bi bi-info-circle-fill me-1"></i>
+                                        <b>System Prompt Auto-Generated</b>
+                                    </div>
+                                    <button onclick="copySystemPrompt()" class="btn btn-sm bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 shadow-sm text-xs font-bold py-1 px-2 rounded">
+                                        <i class="bi bi-clipboard-check me-1"></i> Copy Prompt
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="json-panel">
+                            <div class="relative">
+                                <textarea class="code-editor" id="jsonInput"></textarea>
+                                <div class="absolute top-4 right-4 flex gap-2">
+                                    <button onclick="document.getElementById('jsonUploadInput').click()" class="btn btn-sm bg-slate-700 hover:bg-slate-600 text-white border-none">
+                                        <i class="bi bi-upload me-1"></i> Import JSON
+                                    </button>
+                                    <input type="file" id="jsonUploadInput" hidden accept=".json,application/json" onchange="handleJsonUpload(event)">
+                                    <button onclick="downloadJson()" class="btn btn-sm bg-slate-700 hover:bg-slate-600 text-white border-none">
+                                        <i class="bi bi-download me-1"></i> Export JSON
+                                    </button>
+                                    <button onclick="pasteAndClear()" class="btn btn-sm bg-slate-700 hover:bg-slate-600 text-white border-none">
+                                        <i class="bi bi-clipboard-check me-1"></i> Paste
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between mt-4">
+                                <button class="btn btn-outline-secondary px-4" onclick="loadFullDemo()">
+                                    Load FULL Demo
+                                </button>
+                                <button class="btn bg-amber-500 hover:bg-amber-600 text-white px-5 font-bold shadow-lg" onclick="parseAndRender()">
+                                    <i class="bi bi-play-circle-fill me-2"></i> RUN ENGINE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+    <script>
+        const NS = "http://www.w3.org/2000/svg";
+        let cropper = null;
+        let abortController = null;
+        const modal = new bootstrap.Modal(document.getElementById('dataModal'));
+
+        const DEMO_JSON = {
+            "title": "ChemFlow COMPLETE Capability Showcase",
+            "steps": [{
+                    "annotation": "<b>Feature Demo 1</b><br>Radicals + Orbitals + Fishhook",
+                    "reactants": [{
+                        "id": "mol_radical",
+                        "atoms": [{
+                                "id": "c1",
+                                "symbol": "C",
+                                "partialCharge": "+",
+                                "x": 0,
+                                "y": 0
+                            },
+                            {
+                                "id": "h1",
+                                "symbol": "H",
+                                "x": 0,
+                                "y": -1
+                            },
+                            {
+                                "id": "h2",
+                                "symbol": "H",
+                                "x": -0.8,
+                                "y": 0.5
+                            },
+                            {
+                                "id": "h3",
+                                "symbol": "H",
+                                "x": 0.8,
+                                "y": 0.5
+                            },
+                            {
+                                "id": "cl1",
+                                "symbol": "Cl",
+                                "radical": true,
+                                "lonePairs": 3,
+                                "color": "#16a34a",
+                                "x": 2,
+                                "y": 0
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "c1",
+                                "to": "h1",
+                                "type": "single"
+                            },
+                            {
+                                "from": "c1",
+                                "to": "h2",
+                                "type": "wedge"
+                            },
+                            {
+                                "from": "c1",
+                                "to": "h3",
+                                "type": "dash"
+                            },
+                            {
+                                "from": "c1",
+                                "to": "cl1",
+                                "type": "single",
+                                "style": "dotted"
+                            }
+                        ]
+                    }],
+                    "orbitals": [{
+                            "atomId": "c1",
+                            "type": "p",
+                            "angle": 0,
+                            "color": "rgba(255,100,100,0.3)"
+                        },
+                        {
+                            "atomId": "cl1",
+                            "type": "p",
+                            "angle": 180,
+                            "color": "rgba(100,255,100,0.3)"
+                        }
+                    ],
+                    "arrow": {
+                        "type": "forward",
+                        "text_above": "h\\nu",
+                        "text_below": "heat"
+                    },
+                    "mechanism": [{
+                        "from": "c1",
+                        "to": "cl1",
+                        "type": "fishhook",
+                        "color": "#ef4444",
+                        "curve": -30
+                    }],
+                    "products": [{
+                        "id": "mol_methyl",
+                        "atoms": [{
+                                "id": "c2",
+                                "symbol": "C",
+                                "radical": true
+                            },
+                            {
+                                "id": "h4",
+                                "symbol": "H"
+                            },
+                            {
+                                "id": "h5",
+                                "symbol": "H"
+                            },
+                            {
+                                "id": "h6",
+                                "symbol": "H"
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "c2",
+                                "to": "h4",
+                                "type": "single"
+                            },
+                            {
+                                "from": "c2",
+                                "to": "h5",
+                                "type": "single"
+                            },
+                            {
+                                "from": "c2",
+                                "to": "h6",
+                                "type": "single"
+                            }
+                        ]
+                    }]
+                },
+                {
+                    "annotation": "<b>Feature Demo 2</b><br>Rich Text + All Bond Types",
+                    "reactants": [{
+                        "id": "mol_rich",
+                        "atoms": [{
+                                "id": "r1",
+                                "symbol": "H_{2}O"
+                            },
+                            {
+                                "id": "r2",
+                                "symbol": "M^{2+}",
+                                "color": "#8b5cf6"
+                            },
+                            {
+                                "id": "r3",
+                                "symbol": "C_{\\alpha}",
+                                "charge": "+"
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "r1",
+                                "to": "r2",
+                                "type": "single"
+                            },
+                            {
+                                "from": "r2",
+                                "to": "r3",
+                                "type": "double"
+                            }
+                        ]
+                    }],
+                    "arrow": {
+                        "type": "resonance"
+                    },
+                    "products": [{
+                        "id": "mol_wavy",
+                        "atoms": [{
+                                "id": "w1",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "w2",
+                                "symbol": "C"
+                            }
+                        ],
+                        "bonds": [{
+                            "from": "w1",
+                            "to": "w2",
+                            "type": "wavy"
+                        }]
+                    }]
+                },
+                {
+                    "annotation": "<b>Feature Demo 3</b><br>Benzene Ring + Transition State",
+                    "reactants": [{
+                        "id": "benzene",
+                        "atoms": [{
+                                "id": "b1",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b2",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b3",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b4",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b5",
+                                "symbol": "C"
+                            },
+                            {
+                                "id": "b6",
+                                "symbol": "C"
+                            }
+                        ],
+                        "bonds": [{
+                                "from": "b1",
+                                "to": "b2",
+                                "type": "double"
+                            },
+                            {
+                                "from": "b2",
+                                "to": "b3",
+                                "type": "single"
+                            },
+                            {
+                                "from": "b3",
+                                "to": "b4",
+                                "type": "double"
+                            },
+                            {
+                                "from": "b4",
+                                "to": "b5",
+                                "type": "single"
+                            },
+                            {
+                                "from": "b5",
+                                "to": "b6",
+                                "type": "double"
+                            },
+                            {
+                                "from": "b6",
+                                "to": "b1",
+                                "type": "single"
+                            }
+                        ]
+                    }],
+                    "brackets": [{
+                        "targets": ["benzene"],
+                        "label": "‡"
+                    }],
+                    "arrow": {
+                        "type": "retro"
+                    },
+                    "products": []
+                }
+            ]
+        };
+
+        function generateSystemPrompt() {
+            const demoString = JSON.stringify(DEMO_JSON, null, 2);
+            return `You are ChemFlow JSON Architect. Convert chemical mechanisms into valid JSON.
+
+OUTPUT RULES:
+1. Return ONLY valid JSON in markdown json block.
+2. Every molecule and atom must have unique "id" string.
+3. Omit "x" and "y" for auto-layout unless fixed geometry required.
+
+STRUCTURE REQUIREMENTS - MUST FOLLOW:
+• FIRST STEP: Show the question starting materials without mechanism arrows. Use reaction arrow only.
+• MIDDLE STEPS: Show each and every mechanistic detail with curved arrows, electron movement, intermediates. Include mediators and catalysts as chemical structures if they react.
+• LAST STEP: Show final products only without mechanism arrows. Use reaction arrow only.
+
+FULL CAPABILITIES - USE ANY AS NEEDED:
+
+BONDS:
+- "type": "single" | "double" | "triple" | "wedge" | "dash" | "wavy"
+- "style": "dotted" for H-bonds/TS | "bold" for emphasis
+
+ATOMS:
+- "symbol": Element or Group like CH3, Ph, Et
+- "charge": "+" | "-" | "+2" | "-2" renders colored circles
+- "partialCharge": "+" | "-" renders delta symbols
+- "radical": true renders single electron dot
+- "lonePairs": 0-4 renders electron pairs
+- "isotope": "13" | "2" for isotope labels
+- "color": hex code for custom coloring
+- Rich Text: "H_{2}O" subscript | "M^{2+}" superscript | "C_{\\alpha}" Greek
+
+REACTION ARROWS:
+- "type": "forward" | "eq" | "resonance" | "retro"
+- "text_above": reagents or conditions
+- "text_below": additional conditions like heat, hν
+
+MECHANISM ARROWS:
+- "type": "curved" default 2-electron | "fishhook" for 1-electron radicals
+- "curve": -40 to +40 controls arc height
+- "color": hex for custom color
+- "from": atom_id, "to": atom_id
+
+ORBITALS:
+- "orbitals" array with "atomId", "type": "p" | "sp3", "angle": degrees, "color": rgba
+
+BRACKETS:
+- "brackets" array with "targets": ["mol_id"], "label": "‡" or custom
+
+ANNOTATIONS:
+- "annotation": supports HTML like <b>, <br>
+
+EXAMPLE STRUCTURE:
+${demoString}`;
+        }
+
+        const SYSTEM_PROMPT = generateSystemPrompt();
+
+        function cleanJSON(text) {
+            let cleaned = text.replace(/```json/g, "").replace(/```/g, "");
+            const firstBrace = cleaned.indexOf('{');
+            const lastBrace = cleaned.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+            }
+            return cleaned.trim();
+        }
+
+        const fileInput = document.getElementById('fileInput');
+        const cropBox = document.getElementById('cropBox');
+        const imageToCrop = document.getElementById('imageToCrop');
+        const dropZone = document.getElementById('dropZone');
+        const cropControls = document.getElementById('cropControls');
+
+        fileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) handleImageUpload(file);
+        });
+
+        function handleImageUpload(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                if (cropper) cropper.destroy();
+                imageToCrop.src = e.target.result;
+                cropBox.style.display = 'block';
+                dropZone.style.display = 'none';
+                cropControls.classList.remove('hidden');
+                cropper = new Cropper(imageToCrop, {
+                    viewMode: 1
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetUpload() {
+            if (cropper) cropper.destroy();
+            cropBox.style.display = 'none';
+            dropZone.style.display = 'block';
+            cropControls.classList.add('hidden');
+            fileInput.value = '';
+        }
+
+        function cancelAI() {
+            if (abortController) {
+                abortController.abort();
+                abortController = null;
+            }
+            document.getElementById('aiLoading').style.display = 'none';
+            notify("AI generation cancelled.", "info");
+        }
+
+        function copySystemPrompt() {
+            navigator.clipboard.writeText(SYSTEM_PROMPT).then(() => notify("System Prompt copied!", "success"))
+                .catch(() => notify("Failed to copy.", "error"));
+        }
+
+        async function generateFromAI() {
+            const userText = document.getElementById('aiUserPrompt').value;
+            const loading = document.getElementById('aiLoading');
+            let base64Image = null;
+            if (cropper) base64Image = cropper.getCroppedCanvas({
+                maxWidth: 2048
+            }).toDataURL('image/jpeg', 0.9).split(',')[1];
+
+            if (!userText && !base64Image) {
+                notify("Provide an image or description first.", "error");
+                return;
+            }
+
+            loading.style.display = 'flex';
+            abortController = new AbortController();
+
+            try {
+                const response = await fetch('/api/server', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: userText || "Extract the chemical mechanism into JSON format.",
+                        systemInstruction: SYSTEM_PROMPT,
+                        image: base64Image
+                    }),
+                    signal: abortController.signal
+                });
+
+                if (!response.ok) throw new Error("Server not responding");
+                const data = await response.json();
+                if (data.error) throw new Error("AI processing failed");
+
+                const rawText = data.text || "";
+                const validJSON = cleanJSON(rawText);
+
+                document.getElementById('jsonInput').value = validJSON;
+                new bootstrap.Tab(document.querySelector('button[data-bs-target="#json-panel"]')).show();
+                parseAndRender();
+                notify("AI generated mechanism successfully!", "success");
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                notify("Server not connected or AI not responding", "error");
+            } finally {
+                loading.style.display = 'none';
+                abortController = null;
+            }
+        }
+
+        class LayoutResolver {
+            constructor(scale) {
+                this.scale = scale;
+            }
+            resolve(data) {
+                if (!data.steps) return data;
+                data.steps.forEach(step => {
+                    if (step.reactants) step.reactants.forEach(m => this.resolveMolecule(m));
+                    if (step.products) step.products.forEach(m => this.resolveMolecule(m));
+                });
+                return data;
+            }
+            resolveMolecule(mol) {
+                if (mol.atoms.some(a => a.x !== undefined)) return mol;
+                const adj = {};
+                mol.atoms.forEach(a => adj[a.id] = []);
+                mol.bonds.forEach(b => {
+                    adj[b.from] = adj[b.from] || [];
+                    adj[b.from].push(b.to);
+                    adj[b.to] = adj[b.to] || [];
+                    adj[b.to].push(b.from);
+                });
+                let ring = null;
+                const findCycle = (curr, start, path) => {
+                    if (path.length === 6 && adj[curr].includes(start)) return path;
+                    if (path.length >= 6) return null;
+                    for (const neighbor of adj[curr] || []) {
+                        if (!path.includes(neighbor)) {
+                            const res = findCycle(neighbor, start, [...path, neighbor]);
+                            if (res) return res;
+                        }
+                    }
+                    return null;
+                };
+                for (const atom of mol.atoms) {
+                    const cycle = findCycle(atom.id, atom.id, [atom.id]);
+                    if (cycle) {
+                        ring = cycle;
+                        break;
+                    }
+                }
+                const placed = new Set();
+                if (ring) {
+                    ring.forEach((atomId, i) => {
+                        const angle = (i * 60 - 30) * (Math.PI / 180);
+                        const a = mol.atoms.find(at => at.id === atomId);
+                        if (a) {
+                            a.x = Math.cos(angle) * 1.5;
+                            a.y = Math.sin(angle) * 1.5;
+                            placed.add(atomId);
+                        }
+                    });
+                }
+                mol.atoms.forEach(a => {
+                    if (!placed.has(a.id)) {
+                        const parentId = (adj[a.id] || []).find(pid => placed.has(pid));
+                        if (parentId) {
+                            const parent = mol.atoms.find(p => p.id === parentId);
+                            const angle = Math.atan2(parent.y, parent.x);
+                            a.x = parent.x + Math.cos(angle) * 1.2;
+                            a.y = parent.y + Math.sin(angle) * 1.2;
+                            placed.add(a.id);
+                        } else {
+                            a.x = placed.size * 1.0;
+                            a.y = -2.5;
+                            placed.add(a.id);
+                        }
+                    }
+                });
+                if (!ring) {
+                    mol.atoms.forEach((atom, i) => {
+                        atom.x = i * 1.0;
+                        atom.y = (i % 2 === 0) ? 0 : -0.5;
+                        if (i > 0 && mol.atoms[i - 1].symbol !== 'H' && atom.symbol === 'H') {
+                            atom.x = mol.atoms[i - 1].x;
+                            atom.y = mol.atoms[i - 1].y - 1.0;
+                        }
+                    });
+                }
+                return mol;
+            }
+        }
+
+        class ChemEngine {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.scale = 45;
+                this.atomReg = {};
+                this.moleculeBounds = {};
+                this.layoutResolver = new LayoutResolver(this.scale);
+            }
+            init(w, h) {
+                this.container.innerHTML = '';
+                this.svg = document.createElementNS(NS, "svg");
+                this.svg.setAttribute("width", w);
+                this.svg.setAttribute("height", h);
+                this.svg.classList.add("chem-svg");
+                const defs = document.createElementNS(NS, "defs");
+                this.svg.appendChild(defs);
+                this.defs = defs;
+                this.layerMain = document.createElementNS(NS, "g");
+                this.svg.appendChild(this.layerMain);
+                this.container.appendChild(this.svg);
+            }
+            createMarker(color) {
+                const id = `marker-${color.replace('#', '')}`;
+                if (document.getElementById(id)) return `url(#${id})`;
+                const m = document.createElementNS(NS, "marker");
+                m.setAttribute("id", id);
+                m.setAttribute("markerWidth", "12");
+                m.setAttribute("markerHeight", "12");
+                m.setAttribute("refX", "6");
+                m.setAttribute("refY", "4");
+                m.setAttribute("orient", "auto");
+                const p = document.createElementNS(NS, "path");
+                p.setAttribute("d", "M0,0 L8,4 L0,8 Z");
+                p.setAttribute("fill", color);
+                m.appendChild(p);
+                this.defs.appendChild(m);
+                return `url(#${id})`;
+            }
+
+            drawRichText(g, text, x, y, options = {}) {
+                const fontSize = options.fontSize || 16;
+                const color = options.color || "#1e293b";
+
+                const greek = {
+                    "\\delta": "δ",
+                    "\\alpha": "α",
+                    "\\beta": "β",
+                    "\\pi": "π",
+                    "\\sigma": "σ",
+                    "\\nu": "ν"
+                };
+                const parts = text.split(/(_\{[^}]+\}|\^\{[^}]+\}|_\S|\^\S|\\[a-zA-Z]+)/g).filter(Boolean);
+
+                let cursorX = x;
+                if (parts.length === 1 && !greek[parts[0]]) {
+                    const t = document.createElementNS(NS, "text");
+                    t.textContent = text;
+                    t.setAttribute("x", x);
+                    t.setAttribute("y", y);
+                    t.setAttribute("fill", color);
+                    t.setAttribute("font-size", fontSize);
+                    if (options.anchor) t.setAttribute("text-anchor", options.anchor);
+                    g.appendChild(t);
+                    return;
+                }
+
+                const group = document.createElementNS(NS, "g");
+                if (options.anchor === "middle") {
+                    cursorX -= (parts.length * fontSize * 0.3);
+                }
+
+                parts.forEach(part => {
+                    let drawText = part;
+                    let yOffset = 0;
+                    let currentSize = fontSize;
+
+                    if (greek[part]) drawText = greek[part];
+                    else if (part.startsWith("_")) {
+                        drawText = part.replace(/_\{?|\}?/g, "");
+                        currentSize = fontSize * 0.7;
+                        yOffset = fontSize * 0.3;
+                    } else if (part.startsWith("^")) {
+                        drawText = part.replace(/\^\{?|\}?/g, "");
+                        currentSize = fontSize * 0.7;
+                        yOffset = -fontSize * 0.4;
+                    }
+
+                    const t = document.createElementNS(NS, "text");
+                    t.textContent = drawText;
+                    t.setAttribute("x", cursorX);
+                    t.setAttribute("y", y + yOffset);
+                    t.setAttribute("fill", color);
+                    t.setAttribute("font-size", currentSize);
+                    group.appendChild(t);
+
+                    cursorX += (currentSize * 0.6 * drawText.length);
+                });
+                g.appendChild(group);
+            }
+
+            render(data) {
+                const enrichedData = this.layoutResolver.resolve(data);
+                this.atomReg = {};
+                this.moleculeBounds = {};
+                const stepMetrics = [];
+                let totalCanvasHeight = 100;
+                let maxStepWidth = 800;
+                (enrichedData.steps || []).forEach(step => {
+                    let minGridY = Infinity,
+                        maxGridY = -Infinity;
+                    const scanY = (mols) => (mols || []).forEach(m => m.atoms.forEach(a => {
+                        if (a.y < minGridY) minGridY = a.y;
+                        if (a.y > maxGridY) maxGridY = a.y;
+                    }));
+                    scanY(step.reactants);
+                    scanY(step.products);
+                    if (minGridY === Infinity) {
+                        minGridY = 0;
+                        maxGridY = 0;
+                    }
+                    const contentHeight = (maxGridY - minGridY) * this.scale;
+                    const stepH = Math.max(350, contentHeight + 250);
+                    let stepWidth = 150;
+                    const measureMolW = (mols) => (mols || []).reduce((acc, m) => {
+                        const xs = m.atoms.map(a => a.x || 0);
+                        return acc + ((Math.max(...xs) - Math.min(...xs)) * this.scale) + 120;
+                    }, 0);
+                    stepWidth += measureMolW(step.reactants) + 120 + measureMolW(step.products) + 320;
+                    if (stepWidth > maxStepWidth) maxStepWidth = stepWidth;
+                    stepMetrics.push({
+                        h: stepH,
+                        minY: minGridY
+                    });
+                    totalCanvasHeight += stepH;
+                });
+                this.init(Math.max(1200, maxStepWidth), totalCanvasHeight);
+                if (data.title) {
+                    const title = document.createElementNS(NS, "text");
+                    title.textContent = data.title;
+                    title.setAttribute("x", "40");
+                    title.setAttribute("y", "60");
+                    title.setAttribute("text-anchor", "start");
+                    title.setAttribute("font-size", "28px");
+                    title.setAttribute("font-weight", "800");
+                    title.setAttribute("fill", "#78350f");
+                    this.layerMain.appendChild(title);
+                }
+                let currentY = 100;
+                (enrichedData.steps || []).forEach((step, idx) => {
+                    const info = stepMetrics[idx];
+                    const originY = currentY + 100 - (info.minY * this.scale);
+                    this.drawStep(step, idx, originY, currentY, maxStepWidth);
+                    currentY += info.h;
+                });
+            }
+            drawStep(step, idx, originY, absoluteTopY, canvasWidth) {
+                const label = document.createElementNS(NS, "text");
+                label.textContent = `STEP ${idx + 1}`;
+                label.setAttribute("x", "40");
+                label.setAttribute("y", absoluteTopY + 40);
+                label.setAttribute("fill", "#f59e0b");
+                label.setAttribute("font-weight", "bold");
+                this.layerMain.appendChild(label);
+                if (idx > 0) {
+                    const line = document.createElementNS(NS, "line");
+                    line.setAttribute("x1", 20);
+                    line.setAttribute("x2", canvasWidth - 20);
+                    line.setAttribute("y1", absoluteTopY);
+                    line.setAttribute("y2", absoluteTopY);
+                    line.setAttribute("stroke", "#f1f5f9");
+                    line.setAttribute("stroke-width", "2");
+                    this.layerMain.appendChild(line);
+                }
+
+                let cursorX = 150;
+                (step.reactants || []).forEach(mol => {
+                    const b = this.drawMolecule(mol, cursorX, originY, step.orbitals);
+                    this.moleculeBounds[mol.id] = b;
+                    cursorX += b.w + 60;
+                });
+                const arrowX = cursorX;
+                this.drawReactionArrow(arrowX, originY, step.arrow || {
+                    type: 'forward'
+                });
+                cursorX += 120;
+                (step.products || []).forEach(mol => {
+                    const b = this.drawMolecule(mol, cursorX, originY, step.orbitals);
+                    this.moleculeBounds[mol.id] = b;
+                    cursorX += b.w + 60;
+                });
+                if (step.mechanism) step.mechanism.forEach(m => this.drawMechArrow(m));
+                if (step.brackets) step.brackets.forEach(b => {
+                    if (b.targets) this.drawDynamicBracket(b);
+                });
+                if (step.annotation) this.drawAnnotationBox(step.annotation, cursorX + 20, originY - 60);
+            }
+
+            drawMolecule(mol, x, y, orbitals = []) {
+                const xs = mol.atoms.map(a => a.x || 0),
+                    ys = mol.atoms.map(a => a.y || 0);
+                const minX = Math.min(...xs),
+                    maxX = Math.max(...xs),
+                    minY = Math.min(...ys),
+                    maxY = Math.max(...ys);
+                const width = (maxX - minX) * this.scale;
+                const height = (maxY - minY) * this.scale;
+
+                mol.atoms.forEach(a => {
+                    const px = x + ((a.x || 0) - minX) * this.scale,
+                        py = y + (a.y || 0) * this.scale;
+                    this.atomReg[a.id] = {
+                        x: px,
+                        y: py
+                    };
+
+                    const atomOrb = orbitals.find(o => o.atomId === a.id);
+                    if (atomOrb) this.drawOrbital(px, py, atomOrb.type, atomOrb.angle, atomOrb.color);
+
+                    this.drawAtom(a, px, py);
+                });
+                mol.bonds.forEach(b => {
+                    const p1 = this.atomReg[b.from];
+                    const p2 = this.atomReg[b.to];
+                    if (p1 && p2) this.drawBond(p1, p2, b);
+                });
+                return {
+                    x,
+                    y,
+                    w: width,
+                    h: height,
+                    minX: x,
+                    maxX: x + width,
+                    minY: y + minY * this.scale,
+                    maxY: y + maxY * this.scale
+                };
+            }
+
+            drawOrbital(x, y, type, angleDeg, color = "rgba(0,0,255,0.3)") {
+                const g = document.createElementNS(NS, "g");
+                g.setAttribute("transform", `translate(${x},${y}) rotate(${angleDeg})`);
+
+                const path = document.createElementNS(NS, "path");
+                path.setAttribute("fill", color);
+                path.setAttribute("stroke", color.replace("0.3", "0.8"));
+                path.setAttribute("stroke-width", "1");
+
+                if (type === "p") {
+                    path.setAttribute("d", "M0,0 C15,-15 30,-10 30,0 C30,10 15,15 0,0 M0,0 C-10,-10 -20,-5 -20,0 C-20,5 -10,10 0,0");
+                } else if (type === "sp3") {
+                    path.setAttribute("d", "M0,0 C20,-25 40,-15 40,0 C40,15 20,25 0,0");
+                }
+                g.appendChild(path);
+                this.layerMain.insertBefore(g, this.layerMain.firstChild);
+            }
+
+            drawAtom(a, x, y) {
+                const g = document.createElementNS(NS, "g");
+                g.setAttribute("transform", `translate(${x},${y})`);
+                const halo = document.createElementNS(NS, "text");
+                halo.textContent = a.symbol;
+                halo.setAttribute("class", "atom-halo");
+                halo.setAttribute("text-anchor", "middle");
+                halo.setAttribute("dominant-baseline", "middle");
+                g.appendChild(halo);
+
+                if (a.symbol.includes("_") || a.symbol.includes("^")) {
+                    this.drawRichText(g, a.symbol, -5, 5, {
+                        anchor: "middle",
+                        fontSize: 14
+                    });
+                } else {
+                    const text = document.createElementNS(NS, "text");
+                    text.textContent = a.symbol.replace(/(\d+)/g, (m) => String.fromCharCode(0x2080 + parseInt(m)));
+                    text.setAttribute("class", "atom-text");
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("fill", a.color || "#1e293b");
+                    g.appendChild(text);
+                }
+
+                if (a.charge) {
+                    const charge = document.createElementNS(NS, "text");
+                    charge.textContent = a.charge === '+' ? '⊕' : (a.charge === '-' ? '⊖' : a.charge);
+                    charge.setAttribute("x", "12");
+                    charge.setAttribute("y", "-8");
+                    charge.setAttribute("font-size", "12px");
+                    charge.setAttribute("fill", a.charge.includes('+') ? '#2563eb' : '#ef4444');
+                    g.appendChild(charge);
+                }
+
+                if (a.partialCharge) {
+                    this.drawRichText(g, `\\delta^{${a.partialCharge}}`, -18, -10, {
+                        fontSize: 10,
+                        color: "gray"
+                    });
+                }
+
+                if (a.radical) {
+                    const dot = document.createElementNS(NS, "circle");
+                    dot.setAttribute("r", 2);
+                    dot.setAttribute("cx", 8);
+                    dot.setAttribute("cy", -10);
+                    dot.setAttribute("fill", a.color || "#f97316");
+                    g.appendChild(dot);
+                }
+
+                if (a.isotope) {
+                    const iso = document.createElementNS(NS, "text");
+                    iso.textContent = a.isotope;
+                    iso.setAttribute("x", -10);
+                    iso.setAttribute("y", -6);
+                    iso.setAttribute("font-size", "10px");
+                    iso.setAttribute("fill", a.color || "#1e293b");
+                    g.appendChild(iso);
+                }
+                if (a.lonePairs) this.drawLonePairs(g, a.lonePairs, a.color || "#1e293b");
+                this.layerMain.appendChild(g);
+            }
+            drawLonePairs(g, count, color) {
+                const positions = [{
+                    cx: -6,
+                    cy: -10
+                }, {
+                    cx: 6,
+                    cy: -10
+                }, {
+                    cx: -10,
+                    cy: 0
+                }, {
+                    cx: 10,
+                    cy: 0
+                }];
+                for (let i = 0; i < Math.min(count, 4); i++) {
+                    const c1 = document.createElementNS(NS, "circle");
+                    c1.setAttribute("r", 1.5);
+                    c1.setAttribute("fill", color);
+                    c1.setAttribute("cx", positions[i].cx - 2);
+                    c1.setAttribute("cy", positions[i].cy);
+                    const c2 = document.createElementNS(NS, "circle");
+                    c2.setAttribute("r", 1.5);
+                    c2.setAttribute("fill", color);
+                    c2.setAttribute("cx", positions[i].cx + 2);
+                    c2.setAttribute("cy", positions[i].cy);
+                    g.appendChild(c1);
+                    g.appendChild(c2);
+                }
+            }
+            drawBond(p1, p2, b) {
+                const dx = p2.x - p1.x,
+                    dy = p2.y - p1.y,
+                    dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist === 0) return;
+                const nx = -dy / dist,
+                    ny = dx / dist;
+                const pad = 14;
+                const sx = p1.x + (dx / dist) * pad,
+                    sy = p1.y + (dy / dist) * pad;
+                const ex = p2.x - (dx / dist) * pad,
+                    ey = p2.y - (dy / dist) * pad;
+                const path = document.createElementNS(NS, "path");
+                const color = b.color || "#334155";
+                let d = "";
+
+                if (b.style === 'dotted') {
+                    path.setAttribute("stroke-dasharray", "2,2");
+                }
+
+                if (b.type === 'double') {
+                    const off = 3;
+                    d = `M${sx+nx*off},${sy+ny*off} L${ex+nx*off},${ey+ny*off} M${sx-nx*off},${sy-ny*off} L${ex-nx*off},${ey-ny*off}`;
+                } else if (b.type === 'triple') {
+                    const off = 3;
+                    d = `M${sx},${sy} L${ex},${ey} M${sx+nx*off},${sy+ny*off} L${ex+nx*off},${ey+ny*off} M${sx-nx*off},${sy-ny*off} L${ex-nx*off},${ey-ny*off}`;
+                } else if (b.type === 'wedge') {
+                    const w = 4;
+                    d = `M${sx},${sy} L${ex+nx*w},${ey+ny*w} L${ex-nx*w},${ey-ny*w} Z`;
+                    path.setAttribute("fill", color);
+                    path.setAttribute("stroke", "none");
+                } else if (b.type === 'wavy') {
+                    d = `M${sx},${sy}`;
+                    for (let i = 1; i <= 6; i++) {
+                        const t = i / 6;
+                        const amp = (i % 2 === 0 ? 3 : -3);
+                        d += ` L${sx + (ex-sx)*t + nx*amp},${sy + (ey-sy)*t + ny*amp}`;
+                    }
+                } else {
+                    d = `M${sx},${sy} L${ex},${ey}`;
+                }
+                if (b.type !== 'wedge') {
+                    path.setAttribute("d", d);
+                    path.setAttribute("stroke", color);
+                    path.setAttribute("stroke-width", b.style === 'bold' ? "2.5" : "1.5");
+                    path.setAttribute("fill", "none");
+                    path.setAttribute("stroke-linecap", "round");
+                    if (b.type === 'dash') path.setAttribute("stroke-dasharray", "4,3");
+                } else {
+                    path.setAttribute("d", d);
+                }
+                this.layerMain.insertBefore(path, this.layerMain.firstChild);
+            }
+            drawReactionArrow(x, y, arrow) {
+                const color = arrow.color || "#1e293b";
+                const type = arrow.type || 'forward';
+                const g = document.createElementNS(NS, "g");
+                g.setAttribute("opacity", "0.7");
+
+                if (type === 'eq') {
+                    const path = document.createElementNS(NS, "path");
+                    path.setAttribute("d", `M${x},${y-4} L${x+100},${y-4} M${x+95},${y-8} L${x+100},${y-4} L${x+95},${y} M${x+100},${y+4} L${x},${y+4} M${x+5},${y} L${x},${y+4} L${x+5},${y+8}`);
+                    path.setAttribute("stroke", color);
+                    path.setAttribute("stroke-width", "2");
+                    path.setAttribute("fill", "none");
+                    g.appendChild(path);
+                } else if (type === 'resonance') {
+                    const line = document.createElementNS(NS, "line");
+                    line.setAttribute("x1", x);
+                    line.setAttribute("y1", y);
+                    line.setAttribute("x2", x + 100);
+                    line.setAttribute("y2", y);
+                    line.setAttribute("stroke", color);
+                    line.setAttribute("stroke-width", "2");
+                    line.setAttribute("marker-end", this.createMarker(color));
+                    const mStartId = `marker-start-${color.replace('#','')}`;
+                    if (!document.getElementById(mStartId)) {
+                        const m = document.createElementNS(NS, "marker");
+                        m.setAttribute("id", mStartId);
+                        m.setAttribute("markerWidth", "12");
+                        m.setAttribute("markerHeight", "12");
+                        m.setAttribute("refX", "6");
+                        m.setAttribute("refY", "4");
+                        m.setAttribute("orient", "auto");
+                        const p = document.createElementNS(NS, "path");
+                        p.setAttribute("d", "M8,0 L0,4 L8,8 Z");
+                        p.setAttribute("fill", color);
+                        m.appendChild(p);
+                        this.defs.appendChild(m);
+                    }
+                    line.setAttribute("marker-start", `url(#${mStartId})`);
+                    g.appendChild(line);
+                } else if (type === 'retro') {
+                    const path = document.createElementNS(NS, "path");
+                    path.setAttribute("d", `M${x},${y-2} L${x+100},${y-2} M${x},${y+2} L${x+100},${y+2} M${x+95},${y-6} L${x+100},${y} L${x+95},${y+6}`);
+                    path.setAttribute("stroke", color);
+                    path.setAttribute("stroke-width", "2");
+                    path.setAttribute("fill", "none");
+                    g.appendChild(path);
+                } else {
+                    const line = document.createElementNS(NS, "line");
+                    line.setAttribute("x1", x);
+                    line.setAttribute("y1", y);
+                    line.setAttribute("x2", x + 100);
+                    line.setAttribute("y2", y);
+                    line.setAttribute("stroke", color);
+                    line.setAttribute("stroke-width", "2");
+                    line.setAttribute("marker-end", this.createMarker(color));
+                    g.appendChild(line);
+                }
+
+                if (arrow.text_above) {
+                    this.drawRichText(g, arrow.text_above, x + 50, y - 10, {
+                        anchor: "middle",
+                        fontSize: 12
+                    });
+                }
+                if (arrow.text_below) {
+                    this.drawRichText(g, arrow.text_below, x + 50, y + 20, {
+                        anchor: "middle",
+                        fontSize: 12,
+                        color: "#64748b"
+                    });
+                }
+                this.layerMain.appendChild(g);
+            }
+            drawMechArrow(m) {
+                const p1 = this.atomReg[m.from],
+                    p2 = this.atomReg[m.to];
+                if (!p1 || !p2) return;
+                const color = m.color || "#3b82f6";
+                const dx = p2.x - p1.x,
+                    dy = p2.y - p1.y,
+                    dist = Math.sqrt(dx * dx + dy * dy);
+                const nx = -dy / dist,
+                    ny = dx / dist,
+                    h = m.curve || -35;
+                const cx = (p1.x + p2.x) / 2 + nx * h,
+                    cy = (p1.y + p2.y) / 2 + ny * h;
+                const path = document.createElementNS(NS, "path");
+                path.setAttribute("d", `M${p1.x},${p1.y} Q${cx},${cy} ${p2.x},${p2.y}`);
+                path.setAttribute("stroke", color);
+                path.setAttribute("stroke-width", "1.5");
+                path.setAttribute("fill", "none");
+
+                if (m.type === 'fishhook') {
+                    const headId = `marker-fish-${color.replace('#','')}`;
+                    if (!document.getElementById(headId)) {
+                        const mk = document.createElementNS(NS, "marker");
+                        mk.setAttribute("id", headId);
+                        mk.setAttribute("markerWidth", "12");
+                        mk.setAttribute("markerHeight", "12");
+                        mk.setAttribute("refX", "6");
+                        mk.setAttribute("refY", "4");
+                        mk.setAttribute("orient", "auto");
+                        const p = document.createElementNS(NS, "path");
+                        p.setAttribute("d", "M0,0 L8,4 L2,4 Z");
+                        p.setAttribute("fill", color);
+                        mk.appendChild(p);
+                        this.defs.appendChild(mk);
+                    }
+                    path.setAttribute("marker-end", `url(#${headId})`);
+                } else {
+                    path.setAttribute("marker-end", this.createMarker(color));
+                }
+
+                this.layerMain.appendChild(path);
+            }
+            drawDynamicBracket(b) {
+                let minX = Infinity,
+                    maxX = -Infinity,
+                    minY = Infinity,
+                    maxY = -Infinity;
+                if (b.targets) {
+                    b.targets.forEach(tid => {
+                        const bounds = this.moleculeBounds[tid];
+                        if (bounds) {
+                            minX = Math.min(minX, bounds.minX);
+                            maxX = Math.max(maxX, bounds.maxX);
+                            minY = Math.min(minY, bounds.minY);
+                            maxY = Math.max(maxY, bounds.maxY);
+                        }
+                    });
+                }
+                if (minX === Infinity) return;
+                const pad = 25;
+                const d = `M${minX-pad+10},${minY-pad} L${minX-pad},${minY-pad} L${minX-pad},${maxY+pad} L${minX-pad+10},${maxY+pad} M${maxX+pad-10},${minY-pad} L${maxX+pad},${minY-pad} L${maxX+pad},${maxY+pad} L${maxX+pad-10},${maxY+pad}`;
+                const path = document.createElementNS(NS, "path");
+                path.setAttribute("d", d);
+                path.setAttribute("stroke", b.color || "#64748b");
+                path.setAttribute("stroke-width", "1.5");
+                path.setAttribute("fill", "none");
+                this.layerMain.appendChild(path);
+                if (b.label) {
+                    const txt = document.createElementNS(NS, "text");
+                    txt.textContent = b.label;
+                    txt.setAttribute("x", maxX + pad + 5);
+                    txt.setAttribute("y", minY - pad + 15);
+                    txt.setAttribute("font-weight", "bold");
+                    txt.setAttribute("fill", b.color || "#64748b");
+                    this.layerMain.appendChild(txt);
+                }
+            }
+            drawAnnotationBox(text, x, y) {
+                const fo = document.createElementNS(NS, "foreignObject");
+                fo.setAttribute("x", x);
+                fo.setAttribute("y", y);
+                fo.setAttribute("width", "300");
+                fo.setAttribute("height", "250");
+                const div = document.createElement("div");
+                div.style.cssText = "font-size: 13px; color: #475569; padding: 15px; background: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0; overflow-y: auto; height: 100%; font-family: sans-serif;";
+                div.innerHTML = text;
+                fo.appendChild(div);
+                this.layerMain.appendChild(fo);
+            }
+        }
+
+        const engine = new ChemEngine("canvas-container");
+
+        function openModal() {
+            modal.show();
+        }
+
+        function notify(msg, type = "info") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `custom-toast`;
+            if (type === "error") toast.style.borderLeftColor = "#ef4444";
+            if (type === "success") toast.style.borderLeftColor = "#10b981";
+            toast.innerHTML = `<strong>${type.toUpperCase()}</strong><p class="mb-0 small">${msg}</p>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        }
+
+        function parseAndRender() {
+            try {
+                let dataVal = document.getElementById('jsonInput').value;
+                if (!dataVal.trim().startsWith('{')) dataVal = cleanJSON(dataVal);
+
+                const data = JSON.parse(dataVal);
+                engine.render(data);
+                modal.hide();
+            } catch (e) {
+                notify("Invalid JSON structure.", "error");
+            }
+        }
+
+        function downloadJson() {
+            const data = document.getElementById('jsonInput').value;
+            if (!data) return;
+            const blob = new Blob([data], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chemflow-${Date.now()}.json`;
+            a.click();
+        }
+
+        function handleJsonUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = event => {
+                document.getElementById('jsonInput').value = event.target.result;
+                notify("JSON Imported Successfully.", "success");
+            };
+            reader.readAsText(file);
+        }
+
+        async function pasteAndClear() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('jsonInput').value = text;
+                notify("JSON Pasted from clipboard.", "success");
+            } catch (e) {
+                notify("Clipboard access denied.", "error");
+            }
+        }
+
+        function loadFullDemo() {
+            document.getElementById('jsonInput').value = JSON.stringify(DEMO_JSON, null, 2);
+        }
+
+        function downloadImage() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            const clone = container.cloneNode(true);
+
+            clone.style.position = 'absolute';
+            clone.style.top = '0';
+            clone.style.left = '-9999px';
+            clone.style.width = '1200px';
+            clone.style.height = 'auto';
+            clone.style.overflow = 'visible';
+            clone.style.background = '#ffffff';
+
+            document.body.appendChild(clone);
+
+            html2canvas(clone, {
+                backgroundColor: "#ffffff",
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL("image/png");
+                a.download = "mechanism_export.png";
+                a.click();
+
+                document.body.removeChild(clone);
+                notify("Image saved successfully!", "success");
+            }).catch(err => {
+                console.error("Export failed:", err);
+                notify("Export failed.", "error");
+                document.body.removeChild(clone);
+            });
+        }
+
+        window.onload = () => {
+            loadFullDemo();
+            parseAndRender();
+        };
+    </script>
+</body>
+
+</html>
