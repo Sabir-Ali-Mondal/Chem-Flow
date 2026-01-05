@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const GEMINI_API_KEY = 'AIzaSyDy8lURXC3_ajHJl_Ct4OesZgxgbxVt-KA';
+const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -62,3 +62,4 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
