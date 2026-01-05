@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
 
     <style>
         :root {
@@ -125,6 +126,10 @@
             opacity: 0.7;
             /* helps avoid dirty edges */
         }
+
+
+
+
 
         .bond {
             fill: none;
@@ -810,56 +815,164 @@
 
         function generateSystemPrompt() {
             const demoString = JSON.stringify(DEMO_JSON, null, 2);
-            return `You are ChemFlow JSON Architect. Convert chemical mechanisms into valid JSON.
+            return `You are ChemFlow JSON Architect. Convert chemical mechanisms into valid JSON following strict rules.
 
-OUTPUT RULES:
-1. Return ONLY valid JSON in markdown json block.
-2. Every molecule and atom must have unique "id" string.
-3. Omit "x" and "y" for auto-layout unless fixed geometry required.
+=== CRITICAL OUTPUT RULES ===
+1. Output ONLY a markdown code block with json language identifier
+2. Format: \`\`\`json ... \`\`\`
+3. NO text before the opening \`\`\`json
+4. NO text after the closing \`\`\`
+5. NO explanations, comments, or natural language
+6. The JSON inside must be valid and parsable
 
-STRUCTURE REQUIREMENTS - MUST FOLLOW:
-• FIRST STEP: Show the question starting materials without mechanism arrows. Use reaction arrow only.
-• MIDDLE STEPS: Show each and every mechanistic detail with curved arrows, electron movement, intermediates. Include mediators and catalysts as chemical structures if they react.
+=== EXTRACTION CODE (Your output will be parsed exactly like this) ===
+\`\`\`javascript
+function extractJSON(responseText) {
+    // Extract JSON from markdown code block
+    const match = responseText.match(/\`\`\`json\\s*([\\s\\S]*?)\\s*\`\`\`/);
+    if (!match) {
+        throw new Error("No JSON code block found - response invalid");
+    }
+    const jsonText = match[1];
+    return JSON.parse(jsonText); // Will fail if JSON is malformed
+}
+
+function validateStructure(data) {
+    // Must have title and steps array
+    const title = data.title;              // string, required
+    const steps = data.steps;              // array, required, min 1 element
+    
+    steps.forEach((step, idx) => {
+        const annotation = step.annotation;    // string or undefined
+        const reactants = step.reactants;      // array of molecule objects
+        const products = step.products;        // array of molecule objects
+        const arrow = step.arrow;              // object with type, text_above, text_below
+        const mechanism = step.mechanism;      // array of arrow objects (optional)
+        const orbitals = step.orbitals;        // array of orbital objects (optional)
+        const brackets = step.brackets;        // array of bracket objects (optional)
+        
+        // Every molecule must have unique id and atoms array
+        [...reactants, ...products].forEach(mol => {
+            const molId = mol.id;              // string, required, unique
+            const atoms = mol.atoms;           // array, required
+            const bonds = mol.bonds;           // array, required
+            
+            atoms.forEach(atom => {
+                const atomId = atom.id;        // string, required, unique within molecule
+                const symbol = atom.symbol;    // string, required (e.g., "C", "H_{2}O", "M^{2+}")
+                const x = atom.x;              // number or undefined (auto-layout)
+                const y = atom.y;              // number or undefined (auto-layout)
+                const charge = atom.charge;    // string or undefined ("+", "-", "+2", "-2")
+                const partialCharge = atom.partialCharge;  // string or undefined ("+", "-")
+                const radical = atom.radical;  // boolean or undefined
+                const lonePairs = atom.lonePairs;  // number 0-4 or undefined
+                const isotope = atom.isotope;  // string or undefined ("13", "2")
+                const color = atom.color;      // hex string or undefined
+            });
+            
+            bonds.forEach(bond => {
+                const from = bond.from;        // string, must match atom.id
+                const to = bond.to;            // string, must match atom.id
+                const type = bond.type;        // "single" | "double" | "triple" | "wedge" | "dash" | "wavy"
+                const style = bond.style;      // "dotted" | "bold" or undefined
+            });
+        });
+        
+        if (mechanism) {
+            mechanism.forEach(arrow => {
+                const from = arrow.from;       // string, atom id
+                const to = arrow.to;           // string, atom id
+                const type = arrow.type;       // "curved" | "fishhook"
+                const curve = arrow.curve;     // number -40 to 40 or undefined
+                const color = arrow.color;     // hex string or undefined
+            });
+        }
+    });
+}
+\`\`\`
+
+If your output doesn't match the extraction pattern or validation fails, it will be REJECTED.
+
+=== STRUCTURE REQUIREMENTS - MUST FOLLOW ===
+• Root object MUST have: "title" (string) and "steps" (array with at least 1 element)
+• Every molecule MUST have unique "id" (string)
+• Every atom MUST have unique "id" (string) within its molecule
+• Every atom MUST have "symbol" (string)
+• Omit "x" and "y" for auto-layout unless fixed geometry required
+• All "from" and "to" references MUST match existing atom ids
+
+• FIRST STEP: Show starting materials without mechanism arrows. Use reaction arrow only.
+• MIDDLE STEPS: Show each mechanistic detail with curved/fishhook arrows, electron movement, intermediates.
 • LAST STEP: Show final products only without mechanism arrows. Use reaction arrow only.
 
-FULL CAPABILITIES - USE ANY AS NEEDED:
+=== FULL CAPABILITIES - USE ANY AS NEEDED ===
 
 BONDS:
 - "type": "single" | "double" | "triple" | "wedge" | "dash" | "wavy"
-- "style": "dotted" for H-bonds/TS | "bold" for emphasis
+- "style": "dotted" (for H-bonds/TS) | "bold" (for emphasis)
+- "from" and "to" must reference valid atom ids
 
 ATOMS:
-- "symbol": Element or Group like CH3, Ph, Et
+- "symbol": Element or Group (C, H, O, N, CH3, Ph, Et, H_{2}O, M^{2+}, C_{\\alpha})
 - "charge": "+" | "-" | "+2" | "-2" renders colored circles
-- "partialCharge": "+" | "-" renders delta symbols
+- "partialCharge": "+" | "-" renders delta symbols (δ+ or δ-)
 - "radical": true renders single electron dot
-- "lonePairs": 0-4 renders electron pairs
-- "isotope": "13" | "2" for isotope labels
-- "color": hex code for custom coloring
-- Rich Text: "H_{2}O" subscript | "M^{2+}" superscript | "C_{\\alpha}" Greek
+- "lonePairs": 0-4 renders electron pairs as dots
+- "isotope": "13" | "2" | "14" for isotope labels
+- "color": hex code (#rrggbb) for custom coloring
+- Rich Text Formatting:
+  - Subscript: "H_{2}O", "CH_{3}"
+  - Superscript: "M^{2+}", "O^{-}"
+  - Greek letters: "C_{\\alpha}", "\\beta", "\\gamma"
 
 REACTION ARROWS:
 - "type": "forward" | "eq" | "resonance" | "retro"
-- "text_above": reagents or conditions
-- "text_below": additional conditions like heat, hν
+- "text_above": reagents or conditions (optional)
+- "text_below": additional conditions like heat, hν (optional)
 
 MECHANISM ARROWS:
-- "type": "curved" default 2-electron | "fishhook" for 1-electron radicals
-- "curve": -40 to +40 controls arc height
-- "color": hex for custom color
-- "from": atom_id, "to": atom_id
+- "type": "curved" (default, 2-electron) | "fishhook" (1-electron radical)
+- "from": atom_id (source)
+- "to": atom_id (target)
+- "curve": -40 to +40 controls arc height (optional, default 0)
+- "color": hex code for custom color (optional)
 
 ORBITALS:
-- "orbitals" array with "atomId", "type": "p" | "sp3", "angle": degrees, "color": rgba
+- Array in step level: "orbitals": [...]
+- Each orbital: {"atomId": "atom_id", "type": "p" | "sp3", "angle": degrees, "color": "rgba(r,g,b,a)"}
 
 BRACKETS:
-- "brackets" array with "targets": ["mol_id"], "label": "‡" or custom
+- Array in step level: "brackets": [...]
+- Each bracket: {"targets": ["mol_id1", "mol_id2"], "label": "‡" | "TS" | custom text}
 
 ANNOTATIONS:
-- "annotation": supports HTML like <b>, <br>
+- "annotation": HTML string with <b>, <i>, <br>, <span style="...">
+- Appears above or below the step
 
-EXAMPLE STRUCTURE:
-${demoString}`;
+=== VALIDATION CHECKLIST ===
+Before outputting, verify:
+✓ Output is ONLY \`\`\`json ... \`\`\` with no extra text
+✓ JSON is valid (no trailing commas, proper quotes)
+✓ Root has "title" and "steps"
+✓ Every molecule has unique "id"
+✓ Every atom has unique "id" and "symbol"
+✓ All bond "from"/"to" reference valid atom ids
+✓ All mechanism arrow "from"/"to" reference valid atom ids
+✓ All orbital "atomId" references valid atom ids
+✓ All bracket "targets" reference valid molecule ids
+✓ No invented or hallucinated data - use null if unknown
+
+=== EXAMPLE STRUCTURE ===
+\`\`\`json
+${demoString}
+\`\`\`
+
+=== TASK FORMAT ===
+User will provide: "Generate mechanism for [reaction name/description]"
+
+You respond with: ONLY the JSON code block, nothing else.
+
+Remember: Your output will be extracted and parsed by the exact code shown above. Any deviation = failure.`;
         }
 
         const SYSTEM_PROMPT = generateSystemPrompt();
@@ -936,39 +1049,44 @@ ${demoString}`;
             }
 
             loading.style.display = 'flex';
-            abortController = new AbortController();
 
             try {
-                const response = await fetch('/api/server', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        prompt: userText || "Extract the chemical mechanism into JSON format.",
-                        systemInstruction: SYSTEM_PROMPT,
-                        image: base64Image
-                    }),
-                    signal: abortController.signal
-                });
+                const systemPrompt = generateSystemPrompt();
+                const fullPrompt = `${systemPrompt}
 
-                if (!response.ok) throw new Error("Server not responding");
-                const data = await response.json();
-                if (data.error) throw new Error("AI processing failed");
+=== USER REQUEST ===
+${userText || "Extract the chemical mechanism into JSON format."}
 
-                const rawText = data.text || "";
-                const validJSON = cleanJSON(rawText);
+OUTPUT: (Remember: ONLY \`\`\`json ... \`\`\` block, nothing else)`;
 
-                document.getElementById('jsonInput').value = validJSON;
+                const response = await puter.ai.chat(
+                    fullPrompt,
+                    base64Image ? `data:image/jpeg;base64,${base64Image}` : undefined, {
+                        model: 'gemini-3-flash-preview'
+                    }
+                );
+
+                const responseText = response.message.content;
+                const match = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+                if (!match) {
+                    throw new Error("AI did not return valid JSON code block");
+                }
+
+                const jsonText = match[1].trim();
+                const data = JSON.parse(jsonText);
+
+                if (!data.title || !Array.isArray(data.steps) || data.steps.length === 0) {
+                    throw new Error("Invalid ChemFlow structure: missing title or steps");
+                }
+
+                document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
                 new bootstrap.Tab(document.querySelector('button[data-bs-target="#json-panel"]')).show();
                 parseAndRender();
                 notify("AI generated mechanism successfully!", "success");
             } catch (err) {
-                if (err.name === 'AbortError') return;
-                notify("Server not connected or AI not responding", "error");
+                notify("AI processing failed: " + err.message, "error");
             } finally {
                 loading.style.display = 'none';
-                abortController = null;
             }
         }
 
