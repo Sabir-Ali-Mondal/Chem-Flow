@@ -1,24 +1,62 @@
-# Run locally :
+# Run the App Locally
 
-## Install dependencies
+## Install Dependencies
+
+```bash
 npm install
+```
 
-## Add your API key in server.js
-### Replace: YOUR_GEMINI_API_KEY_HERE
+## Add Your API Key
 
-## Run locally
-*npm start*
+Open `server.js` and replace:
 
-## Server runs at http://localhost:3000
+```js
+YOUR_GEMINI_API_KEY_HERE
+```
 
+## Start the Server
 
+```bash
+npm start
+```
 
-# Public host :
+## Local Server URL
 
-## Vercel deploy ready app
-## Add your API key in api/server.js
-# Replace: YOUR_GEMINI_API_KEY_HERE
+```
+http://localhost:3000
+```
 
+---
 
-# Frontend :
-## Download index.html and run it manually using ChatGPT like chatbot .
+# Public Hosting
+
+## Vercel Deployment Ready
+
+This application is ready to be deployed on Vercel.
+
+## Add API Key for Production
+
+Open:
+
+```
+api/server.js
+```
+
+Replace:
+
+```js
+YOUR_GEMINI_API_KEY_HERE
+```
+
+---
+
+# Frontend Setup
+
+## Frontend File
+
+* Download `index.html`
+* Open it manually in your browser
+
+## Usage
+
+Use the frontend as a ChatGPT-like chatbot interface for JSON Generation .
