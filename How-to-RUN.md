@@ -2,7 +2,7 @@
 
 ### Go to 
 
-* [chemflow-app](https://github.com/Sabir-Ali-Mondal/Chem-Flow/tree/main/chemflow-app)
+* [`chemflow-app`](https://github.com/Sabir-Ali-Mondal/Chem-Flow/tree/main/chemflow-app)
 
 ### Read 
 
@@ -14,7 +14,7 @@
 
 ### Frontend File
 
-* Download `index.html`
+* Download [`index.html`](https://github.com/Sabir-Ali-Mondal/Chem-Flow/blob/main/index.html)
 * Open it manually in your browser
 
 ### Usage
