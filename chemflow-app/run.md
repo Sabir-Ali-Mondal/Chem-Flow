@@ -1,12 +1,12 @@
 # Run the App Locally
 
-## Install Dependencies
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-## Add Your API Key
+### Add Your API Key
 
 Open `server.js` and replace:
 
@@ -14,13 +14,13 @@ Open `server.js` and replace:
 YOUR_GEMINI_API_KEY_HERE
 ```
 
-## Start the Server
+### Start the Server
 
 ```bash
 npm start
 ```
 
-## Local Server URL
+### Local Server URL
 
 ```
 http://localhost:3000
@@ -30,11 +30,11 @@ http://localhost:3000
 
 # Public Hosting
 
-## Vercel Deployment Ready
+### Vercel Deployment Ready
 
 This application is ready to be deployed on Vercel.
 
-## Add API Key for Production
+### Add API Key for Production
 
 Open:
 
@@ -52,11 +52,14 @@ YOUR_GEMINI_API_KEY_HERE
 
 # Frontend Setup
 
-## Frontend File
+### Frontend File
 
-* Download `index.html`
+* Download `public/index.html`
 * Open it manually in your browser
 
-## Usage
+### Usage
 
-Use the frontend as a ChatGPT-like chatbot interface for JSON Generation .
+* Use the frontend as a ChatGPT-like chatbot interface for JSON Generation .
+*You can go through main folder [index.html](https://github.com/Sabir-Ali-Mondal/Chem-Flow/blob/main/index.html) for automatic genaration , without backend as we used puter.js AI system*
+
+
