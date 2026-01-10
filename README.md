@@ -6,6 +6,7 @@
 
 AI and Frontend powered web application for visualizing complex chemical reaction mechanisms. This tool streamlines the process of learning and teaching chemistry by converting natural language / handwritten image topics into chemical reaction mechanism visual like book.
 
+---
 
 — 𝙄 𝙙𝙤𝙣’𝙩 𝙡𝙤𝙫𝙚 𝘾𝙝𝙚𝙢𝙞𝙨𝙩𝙧𝙮… 𝙗𝙪𝙩 𝙄 𝙗𝙪𝙞𝙡𝙩 #ChemFlow 𝙖𝙣𝙮𝙬𝙖𝙮 😄
 I do love building tools that make learning easier.
@@ -25,18 +26,20 @@ This tool helps in learning, teaching, and visualizing chemistry clearly.
 
 
 
-💡 𝙄𝙙𝙚𝙖 𝙘𝙧𝙚𝙙𝙞𝙩
+💡 𝙄𝙙𝙚𝙖 𝙘𝙧𝙚𝙙𝙞𝙩:
 The core idea came from my cousin brother, 𝗡𝗮𝘆𝗮𝗻 𝗞𝗮𝗯𝗶𝗿 𝗠𝗼𝗻𝗱𝗮𝗹.
 
+
 Simple UI, clear mechanisms, student-friendly approach.
-Still improving it, still learning — but proud of this step 💙
+
+---
 
 
-🔗 𝗟𝗶𝘃𝗲 (𝗙𝗿𝗼𝗻𝘁𝗲𝗻𝗱): https://chem.ccbp.tech/
+* 🔗 𝗟𝗶𝘃𝗲 (𝗙𝗿𝗼𝗻𝘁𝗲𝗻𝗱): https://chem.ccbp.tech/
 
-🔗 𝗚𝗶𝘁𝗛𝘂𝗯: https://github.com/Sabir-Ali-Mondal/Chem-Flow
+* 🔗 𝗚𝗶𝘁𝗛𝘂𝗯: https://github.com/Sabir-Ali-Mondal/Chem-Flow
 
-#NotPiVision #ChemFlow
+```#NotPiVision ChemFlow```
 
 ## 🧪 Chemical Reaction Mechanism Demo
 
