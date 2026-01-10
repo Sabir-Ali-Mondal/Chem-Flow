@@ -60,6 +60,7 @@ YOUR_GEMINI_API_KEY_HERE
 ### Usage
 
 * Use the frontend as a ChatGPT-like chatbot interface for JSON Generation .
-*You can go through main folder [index.html](https://github.com/Sabir-Ali-Mondal/Chem-Flow/blob/main/index.html) for automatic genaration , without backend as we used puter.js AI system*
+* *You can go through main folder [index.html](https://github.com/Sabir-Ali-Mondal/Chem-Flow/blob/main/index.html) for automatic genaration , without backend as we used puter.js AI system*
+
 
 
