@@ -1,6 +1,6 @@
 # ChemFlow 🧪
 
-## AI Chemistry Visualizer step by step mechanism
+### AI Chemistry Visualizer step by step mechanism
 
 ![Language](https://img.shields.io/badge/Code-HTML%2C%20CSS%2C%20JS-blue)
 
@@ -39,7 +39,7 @@ Simple UI, clear mechanisms, student-friendly approach.
 
 * 🔗 𝗚𝗶𝘁𝗛𝘂𝗯: https://github.com/Sabir-Ali-Mondal/Chem-Flow
 
-```#NotPiVision ChemFlow```
+````#NotPiVision #ChemFlow````
 
 ## 🧪 Chemical Reaction Mechanism Demo
 
